@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { StoreProvider } from '@/lib/store-context';
 import { I18nProvider } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth-context';
 import { DashboardPage } from '@/components/DashboardPage';
 import { TransactionsPage } from '@/components/TransactionsPage';
 import { DebtsPage } from '@/components/DebtsPage';
 import { SavingsPage } from '@/components/SavingsPage';
 import { SettingsPage } from '@/components/SettingsPage';
-import { LayoutDashboard, ArrowLeftRight, Users, Target, Settings } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Users, Target, Settings, LogOut } from 'lucide-react';
 
 type Tab = 'dashboard' | 'transactions' | 'debts' | 'savings' | 'settings';
 
 const AppContent: React.FC = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
   const { t } = useI18n();
+  const { signOut, profile } = useAuth();
 
   const tabs: { key: Tab; icon: React.ElementType; labelKey: string }[] = [
     { key: 'dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
@@ -33,7 +35,18 @@ const AppContent: React.FC = () => {
           </div>
           <h1 className="font-bold text-lg text-foreground">Mizaniyti</h1>
         </div>
-        <p className="text-xs text-muted-foreground">{t('dash.monthlySummary')}</p>
+        <div className="flex items-center gap-2">
+          {profile?.full_name && (
+            <span className="text-xs text-muted-foreground hidden sm:block">{profile.full_name}</span>
+          )}
+          <button
+            onClick={signOut}
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+            title="Se déconnecter"
+          >
+            <LogOut className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
       </header>
 
       {/* Content */}

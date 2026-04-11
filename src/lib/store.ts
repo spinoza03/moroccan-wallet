@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from './supabase';
+import { useAuth } from './auth-context';
 
 // Types
 export interface Transaction {
@@ -46,37 +48,68 @@ const defaultState: AppState = {
   settings: { salaryDay: 28 },
 };
 
-function loadState(): AppState {
-  try {
-    const raw = localStorage.getItem('mizaniyti-data');
-    if (raw) return { ...defaultState, ...JSON.parse(raw) };
-  } catch {}
-  return defaultState;
-}
-
-function saveState(state: AppState) {
-  localStorage.setItem('mizaniyti-data', JSON.stringify(state));
-}
-
 export function useAppStore() {
-  const [state, setState] = useState<AppState>(loadState);
+  const { user } = useAuth();
+  const [state, setState] = useState<AppState>(defaultState);
+  const [dataLoading, setDataLoading] = useState(true);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { saveState(state); }, [state]);
+  // Load from Supabase on mount / user change
+  useEffect(() => {
+    if (!user) {
+      setState(defaultState);
+      setDataLoading(false);
+      return;
+    }
+    setDataLoading(true);
+    supabase
+      .from('user_data')
+      .select('data')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.data) {
+          setState({ ...defaultState, ...(data.data as AppState) });
+        }
+        setDataLoading(false);
+      });
+  }, [user]);
+
+  // Debounced save to Supabase
+  const persistState = useCallback((newState: AppState) => {
+    if (!user) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      supabase.from('user_data').upsert({
+        user_id: user.id,
+        data: newState,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    }, 800);
+  }, [user]);
+
+  const update = useCallback((updater: (s: AppState) => AppState) => {
+    setState(prev => {
+      const next = updater(prev);
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
 
   const addTransaction = useCallback((tx: Omit<Transaction, 'id'>) => {
-    setState(s => ({ ...s, transactions: [{ ...tx, id: crypto.randomUUID() }, ...s.transactions] }));
-  }, []);
+    update(s => ({ ...s, transactions: [{ ...tx, id: crypto.randomUUID() }, ...s.transactions] }));
+  }, [update]);
 
   const deleteTransaction = useCallback((id: string) => {
-    setState(s => ({ ...s, transactions: s.transactions.filter(t => t.id !== id) }));
-  }, []);
+    update(s => ({ ...s, transactions: s.transactions.filter(t => t.id !== id) }));
+  }, [update]);
 
   const addDebtProfile = useCallback((p: Omit<DebtProfile, 'id' | 'payments'>) => {
-    setState(s => ({ ...s, debtProfiles: [...s.debtProfiles, { ...p, id: crypto.randomUUID(), payments: [] }] }));
-  }, []);
+    update(s => ({ ...s, debtProfiles: [...s.debtProfiles, { ...p, id: crypto.randomUUID(), payments: [] }] }));
+  }, [update]);
 
   const addDebtPayment = useCallback((profileId: string, amount: number) => {
-    setState(s => ({
+    update(s => ({
       ...s,
       debtProfiles: s.debtProfiles.map(p =>
         p.id === profileId
@@ -84,18 +117,18 @@ export function useAppStore() {
           : p
       ),
     }));
-  }, []);
+  }, [update]);
 
   const deleteDebtProfile = useCallback((id: string) => {
-    setState(s => ({ ...s, debtProfiles: s.debtProfiles.filter(p => p.id !== id) }));
-  }, []);
+    update(s => ({ ...s, debtProfiles: s.debtProfiles.filter(p => p.id !== id) }));
+  }, [update]);
 
   const addSavingsGoal = useCallback((g: Omit<SavingsGoal, 'id' | 'contributions'>) => {
-    setState(s => ({ ...s, savingsGoals: [...s.savingsGoals, { ...g, id: crypto.randomUUID(), contributions: [] }] }));
-  }, []);
+    update(s => ({ ...s, savingsGoals: [...s.savingsGoals, { ...g, id: crypto.randomUUID(), contributions: [] }] }));
+  }, [update]);
 
   const addSavingsContribution = useCallback((goalId: string, amount: number) => {
-    setState(s => ({
+    update(s => ({
       ...s,
       savingsGoals: s.savingsGoals.map(g =>
         g.id === goalId
@@ -103,21 +136,20 @@ export function useAppStore() {
           : g
       ),
     }));
-  }, []);
+  }, [update]);
 
   const deleteSavingsGoal = useCallback((id: string) => {
-    setState(s => ({ ...s, savingsGoals: s.savingsGoals.filter(g => g.id !== id) }));
-  }, []);
+    update(s => ({ ...s, savingsGoals: s.savingsGoals.filter(g => g.id !== id) }));
+  }, [update]);
 
   const addToDkhira = useCallback((amount: number) => {
-    setState(s => ({ ...s, dkhira: s.dkhira + amount }));
-  }, []);
+    update(s => ({ ...s, dkhira: s.dkhira + amount }));
+  }, [update]);
 
   const updateSettings = useCallback((settings: Partial<AppSettings>) => {
-    setState(s => ({ ...s, settings: { ...s.settings, ...settings } }));
-  }, []);
+    update(s => ({ ...s, settings: { ...s.settings, ...settings } }));
+  }, [update]);
 
-  // Computed values
   const getDebtRemaining = useCallback((profile: DebtProfile) => {
     const totalPaid = profile.payments.reduce((sum, p) => sum + p.amount, 0);
     return Math.max(0, profile.totalAmount - totalPaid);
@@ -134,6 +166,7 @@ export function useAppStore() {
 
   return {
     ...state,
+    dataLoading,
     addTransaction, deleteTransaction,
     addDebtProfile, addDebtPayment, deleteDebtProfile, getDebtRemaining,
     addSavingsGoal, addSavingsContribution, deleteSavingsGoal, getSavingsTotal, getSavingsPercent,

@@ -62,8 +62,8 @@ export const DebtsPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-sm">{p.name}</p>
-                <p className="text-xs text-muted-foreground">Total : {formatMAD(p.totalAmount)}</p>
-                <p className="text-xs text-muted-foreground">Payé : {formatMAD(paid)}</p>
+                <p className="text-xs text-muted-foreground">{t('debt.total')}{formatMAD(p.totalAmount)}</p>
+                <p className="text-xs text-muted-foreground">{t('debt.paid')}{formatMAD(paid)}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -71,7 +71,7 @@ export const DebtsPage: React.FC = () => {
                 <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-medium">{t('debt.settled')}</span>
               ) : (
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Reste</p>
+                  <p className="text-xs text-muted-foreground">{t('debt.reste')}</p>
                   <span className={`text-sm font-bold ${isDebt ? 'text-destructive' : 'text-green-600'}`}>{formatMAD(remaining)}</span>
                 </div>
               )}
@@ -116,7 +116,7 @@ export const DebtsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Totals summary like Excel */}
+      {/* Totals */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-destructive/10 border-destructive/30">
           <CardContent className="py-4 px-4">
@@ -124,10 +124,10 @@ export const DebtsPage: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
                 <UserMinus className="w-4 h-4 text-destructive" />
               </div>
-              <p className="font-bold text-destructive">Dettes</p>
+              <p className="font-bold text-destructive">{t('dash.debts')}</p>
             </div>
             {debts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune dette</p>
+              <p className="text-sm text-muted-foreground">{t('debt.noDebts')}</p>
             ) : (
               <div className="space-y-1">
                 {debts.map(p => (
@@ -137,7 +137,7 @@ export const DebtsPage: React.FC = () => {
                   </div>
                 ))}
                 <div className="flex justify-between text-sm font-bold border-t border-destructive/30 pt-1 mt-1">
-                  <span>Total</span>
+                  <span>{t('common.total')}</span>
                   <span className="text-destructive">{formatMAD(totalDebts)}</span>
                 </div>
               </div>
@@ -151,10 +151,10 @@ export const DebtsPage: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
                 <UserPlus className="w-4 h-4 text-green-600" />
               </div>
-              <p className="font-bold text-green-700">Créances</p>
+              <p className="font-bold text-green-700">{t('dash.credits')}</p>
             </div>
             {credits.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune créance</p>
+              <p className="text-sm text-muted-foreground">{t('debt.noCredits')}</p>
             ) : (
               <div className="space-y-1">
                 {credits.map(p => (
@@ -164,7 +164,7 @@ export const DebtsPage: React.FC = () => {
                   </div>
                 ))}
                 <div className="flex justify-between text-sm font-bold border-t border-green-500/30 pt-1 mt-1">
-                  <span>Total</span>
+                  <span>{t('common.total')}</span>
                   <span className="text-green-600">{formatMAD(totalCredits)}</span>
                 </div>
               </div>
@@ -181,14 +181,14 @@ export const DebtsPage: React.FC = () => {
               <Select value={form.type} onValueChange={(v: 'debt' | 'credit') => setForm({ ...form, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="debt">Je dois (Dette)</SelectItem>
-                  <SelectItem value="credit">On me doit (Créance)</SelectItem>
+                  <SelectItem value="debt">{t('debt.iOweType')}</SelectItem>
+                  <SelectItem value="credit">{t('debt.owedToMeType')}</SelectItem>
                 </SelectContent>
               </Select>
               <Input type="number" step="0.01" min="0" placeholder={t('debt.amount')} value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">{t('tx.save')}</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Annuler</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
               </div>
             </form>
           </CardContent>

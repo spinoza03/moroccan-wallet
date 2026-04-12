@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, Plus, TrendingUp, TrendingDown, Search } from 'lucide-react';
 
-// Full category lists matching Excel
 export const INCOME_CATEGORIES = [
   'Salaire 1',
   'Retour sur investissement',
@@ -83,14 +82,17 @@ export const VARIABLE_EXPENSE_CATEGORIES = [
 ];
 
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+const MONTHS_DA = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
 export const TransactionsPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { transactions, addTransaction, deleteTransaction } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+
+  const MONTHS = lang === 'darija' ? MONTHS_DA : MONTHS_FR;
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -123,7 +125,6 @@ export const TransactionsPage: React.FC = () => {
     setShowForm(false);
   };
 
-  // Get available months from transactions
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
     transactions.forEach(tx => {
@@ -147,9 +148,9 @@ export const TransactionsPage: React.FC = () => {
   }, [transactions, search, filterType, filterMonth]);
 
   const categoryLabel = (tx: typeof transactions[0]) => {
-    if (tx.type === 'income') return 'Revenus';
-    if (tx.category === 'fixed') return 'Dépenses fixes';
-    return 'Dépenses variables';
+    if (tx.type === 'income') return t('tx.incomeType');
+    if (tx.category === 'fixed') return t('tx.expenseFixed');
+    return t('tx.expenseVariable');
   };
 
   return (
@@ -177,8 +178,8 @@ export const TransactionsPage: React.FC = () => {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="income">Revenus</SelectItem>
-                    <SelectItem value="expense">Dépense</SelectItem>
+                    <SelectItem value="income">{t('tx.incomeType')}</SelectItem>
+                    <SelectItem value="expense">{t('tx.expense')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -186,15 +187,15 @@ export const TransactionsPage: React.FC = () => {
                   <Select value={form.category} onValueChange={(v: 'fixed' | 'variable') => setForm({ ...form, category: v, moroccanCategory: '' })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="fixed">Dépense fixe</SelectItem>
-                      <SelectItem value="variable">Dépense variable</SelectItem>
+                      <SelectItem value="fixed">{t('tx.expenseFixed')}</SelectItem>
+                      <SelectItem value="variable">{t('tx.expenseVariable')}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
               </div>
 
               <Select value={form.moroccanCategory} onValueChange={v => setForm({ ...form, moroccanCategory: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir un poste..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('tx.chooseCat')} /></SelectTrigger>
                 <SelectContent>
                   {cats.map(c => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -202,20 +203,20 @@ export const TransactionsPage: React.FC = () => {
                 </SelectContent>
               </Select>
 
-              <Input placeholder="Libellé / description" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} />
+              <Input placeholder={t('tx.labelPlaceholder')} value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} />
 
               <Input
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="Montant (DH)"
+                placeholder={t('tx.amountPlaceholder')}
                 value={form.amount}
                 onChange={e => setForm({ ...form, amount: e.target.value })}
               />
 
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">{t('tx.save')}</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Annuler</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
               </div>
             </form>
           </CardContent>
@@ -228,7 +229,7 @@ export const TransactionsPage: React.FC = () => {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher..."
+              placeholder={t('tx.search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-8"
@@ -237,9 +238,9 @@ export const TransactionsPage: React.FC = () => {
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tout</SelectItem>
-              <SelectItem value="income">Revenus</SelectItem>
-              <SelectItem value="expense">Dépenses</SelectItem>
+              <SelectItem value="all">{t('tx.all')}</SelectItem>
+              <SelectItem value="income">{t('tx.incomeType')}</SelectItem>
+              <SelectItem value="expense">{t('tx.expenses')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -247,12 +248,12 @@ export const TransactionsPage: React.FC = () => {
           <Select value={filterMonth} onValueChange={setFilterMonth}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les mois</SelectItem>
+              <SelectItem value="all">{t('tx.allMonths')}</SelectItem>
               {availableMonths.map(m => {
                 const [y, mo] = m.split('-');
                 return (
                   <SelectItem key={m} value={m}>
-                    {MONTHS_FR[parseInt(mo) - 1]} {y}
+                    {MONTHS[parseInt(mo) - 1]} {y}
                   </SelectItem>
                 );
               })}
@@ -264,7 +265,7 @@ export const TransactionsPage: React.FC = () => {
       {/* Transaction list */}
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          {filtered.length} transaction{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} {filtered.length !== 1 ? t('tx.counts') : t('tx.count')}
         </h2>
         {filtered.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">{t('common.noData')}</p>

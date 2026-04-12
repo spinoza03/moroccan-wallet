@@ -50,7 +50,6 @@ export const SavingsPage: React.FC = () => {
     setShowDkhiraInput(false);
   };
 
-  // Chart data for the goals summary table + bar chart
   const chartData = savingsGoals.map(g => {
     const saved = getSavingsTotal(g);
     const remaining = Math.max(0, g.target - saved);
@@ -64,7 +63,7 @@ export const SavingsPage: React.FC = () => {
   const totalPct = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
 
   const pieTotalData = totalTarget > 0
-    ? [{ name: 'Épargné', value: totalSaved }, { name: 'Reste', value: totalRemaining }]
+    ? [{ name: t('savings.savedLabel'), value: totalSaved }, { name: t('savings.restLabel'), value: totalRemaining }]
     : [];
 
   const BAR_SAVED_COLOR = '#22c55e';
@@ -80,20 +79,20 @@ export const SavingsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Summary table like Excel */}
+      {/* Summary table */}
       {savingsGoals.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Récapitulatif des objectifs</CardTitle>
+            <CardTitle className="text-sm">{t('savings.summary')}</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="text-left px-2 py-2 font-semibold">Nom du projet</th>
-                  <th className="text-right px-2 py-2 font-semibold text-blue-600">Montant</th>
-                  <th className="text-right px-2 py-2 font-semibold text-yellow-600">Montant épargné</th>
-                  <th className="text-right px-2 py-2 font-semibold">Reste à épargner</th>
+                  <th className="text-left px-2 py-2 font-semibold">{t('savings.projectName')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-blue-600">{t('dash.colAmount')}</th>
+                  <th className="text-right px-2 py-2 font-semibold text-yellow-600">{t('savings.savedAmount')}</th>
+                  <th className="text-right px-2 py-2 font-semibold">{t('savings.toSave')}</th>
                   <th className="text-right px-2 py-2 font-semibold">%</th>
                 </tr>
               </thead>
@@ -110,7 +109,7 @@ export const SavingsPage: React.FC = () => {
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border font-bold">
-                  <td className="px-2 py-2">Total</td>
+                  <td className="px-2 py-2">{t('common.total')}</td>
                   <td className="px-2 py-2 text-right text-blue-600">{formatMAD(totalTarget)}</td>
                   <td className="px-2 py-2 text-right text-yellow-600">{formatMAD(totalSaved)}</td>
                   <td className="px-2 py-2 text-right">{formatMAD(totalRemaining)}</td>
@@ -122,12 +121,12 @@ export const SavingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Bar chart — saved vs remaining per goal */}
+      {/* Charts */}
       {savingsGoals.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Épargné vs Reste par objectif</CardTitle>
+              <CardTitle className="text-sm">{t('savings.savedVsRest')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -136,8 +135,8 @@ export const SavingsPage: React.FC = () => {
                   <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={70} />
                   <Tooltip formatter={(v: number) => formatMAD(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="saved" name="Épargné" fill={BAR_SAVED_COLOR} stackId="a" />
-                  <Bar dataKey="remaining" name="Reste" fill={BAR_REMAIN_COLOR} stackId="a" />
+                  <Bar dataKey="saved" name={t('savings.savedLabel')} fill={BAR_SAVED_COLOR} stackId="a" />
+                  <Bar dataKey="remaining" name={t('savings.restLabel')} fill={BAR_REMAIN_COLOR} stackId="a" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -146,7 +145,7 @@ export const SavingsPage: React.FC = () => {
           {pieTotalData.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Progression globale</CardTitle>
+                <CardTitle className="text-sm">{t('savings.globalProgress')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={200}>
@@ -183,7 +182,7 @@ export const SavingsPage: React.FC = () => {
               <Input type="number" step="0.01" min="0" placeholder={t('savings.target')} value={form.target} onChange={e => setForm({ ...form, target: e.target.value })} />
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1">{t('tx.save')}</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Annuler</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{t('common.cancel')}</Button>
               </div>
             </form>
           </CardContent>
@@ -204,9 +203,9 @@ export const SavingsPage: React.FC = () => {
                   <div>
                     <p className="font-medium text-sm">{g.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Épargné : {formatMAD(total)} / {formatMAD(g.target)}
+                      {t('savings.savedOf')} {formatMAD(total)} / {formatMAD(g.target)}
                     </p>
-                    <p className="text-xs text-orange-500">Reste : {formatMAD(remaining)}</p>
+                    <p className="text-xs text-orange-500">{t('savings.restOf')} {formatMAD(remaining)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -258,7 +257,7 @@ export const SavingsPage: React.FC = () => {
             </div>
           ) : (
             <Button variant="outline" size="sm" onClick={() => setShowDkhiraInput(true)}>
-              <PiggyBank className="w-4 h-4 mr-1" /> Ajouter à la tirelire
+              <PiggyBank className="w-4 h-4 mr-1" /> {t('savings.addToDkhira')}
             </Button>
           )}
         </CardContent>

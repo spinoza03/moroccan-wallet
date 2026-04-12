@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Language } from '@/lib/i18n';
 
 type Mode = 'login' | 'register';
 
 const AuthPage: React.FC = () => {
   const { signIn, signUp } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const [mode, setMode] = useState<Mode>('login');
   const [form, setForm] = useState({ email: '', password: '', fullName: '', phone: '', confirm: '' });
   const [error, setError] = useState('');
@@ -20,10 +24,10 @@ const AuthPage: React.FC = () => {
     setSuccess('');
 
     if (mode === 'register') {
-      if (!form.fullName.trim()) { setError('Veuillez entrer votre nom complet.'); return; }
-      if (!form.phone.trim()) { setError('Veuillez entrer votre numéro WhatsApp.'); return; }
-      if (form.password !== form.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
-      if (form.password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+      if (!form.fullName.trim()) { setError(t('auth.err.nameRequired')); return; }
+      if (!form.phone.trim()) { setError(t('auth.err.phoneRequired')); return; }
+      if (form.password !== form.confirm) { setError(t('auth.err.passwordMismatch')); return; }
+      if (form.password.length < 6) { setError(t('auth.err.passwordShort')); return; }
     }
 
     setLoading(true);
@@ -33,7 +37,7 @@ const AuthPage: React.FC = () => {
     } else {
       const { error: err } = await signUp(form.email, form.password, form.fullName, form.phone);
       if (err) setError(err);
-      else setSuccess('Compte créé ! Vérifiez votre email pour confirmer votre compte, puis connectez-vous.');
+      else setSuccess(t('auth.successMsg'));
     }
     setLoading(false);
   };
@@ -47,13 +51,24 @@ const AuthPage: React.FC = () => {
             <span className="text-primary-foreground font-bold text-3xl">م</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">Mizaniyti</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gérez vos finances personnelles</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('auth.tagline')}</p>
+        </div>
+
+        {/* Language switcher */}
+        <div className="flex justify-center mb-4">
+          <Select value={lang} onValueChange={(v) => setLang(v as Language)}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fr">Français</SelectItem>
+              <SelectItem value="darija">الدارجة المغربية</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-lg text-center">
-              {mode === 'login' ? 'Connexion' : 'Créer un compte'}
+              {mode === 'login' ? t('auth.login') : t('auth.register')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -61,7 +76,7 @@ const AuthPage: React.FC = () => {
               <div className="text-center space-y-4">
                 <p className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">{success}</p>
                 <Button className="w-full" onClick={() => { setMode('login'); setSuccess(''); }}>
-                  Se connecter
+                  {t('auth.submit.login')}
                 </Button>
               </div>
             ) : (
@@ -69,14 +84,14 @@ const AuthPage: React.FC = () => {
                 {mode === 'register' && (
                   <>
                     <Input
-                      placeholder="Nom complet"
+                      placeholder={t('auth.fullName')}
                       value={form.fullName}
                       onChange={e => setForm({ ...form, fullName: e.target.value })}
                       required
                     />
                     <Input
                       type="tel"
-                      placeholder="Numéro WhatsApp (ex: 0612345678)"
+                      placeholder={t('auth.whatsapp')}
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
                       required
@@ -85,14 +100,14 @@ const AuthPage: React.FC = () => {
                 )}
                 <Input
                   type="email"
-                  placeholder="Email"
+                  placeholder={t('auth.email')}
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   required
                 />
                 <Input
                   type="password"
-                  placeholder="Mot de passe"
+                  placeholder={t('auth.password')}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   required
@@ -100,7 +115,7 @@ const AuthPage: React.FC = () => {
                 {mode === 'register' && (
                   <Input
                     type="password"
-                    placeholder="Confirmer le mot de passe"
+                    placeholder={t('auth.confirmPassword')}
                     value={form.confirm}
                     onChange={e => setForm({ ...form, confirm: e.target.value })}
                     required
@@ -110,7 +125,7 @@ const AuthPage: React.FC = () => {
                   <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</p>
                 )}
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : "S'inscrire"}
+                  {loading ? t('auth.loading') : mode === 'login' ? t('auth.submit.login') : t('auth.submit.register')}
                 </Button>
               </form>
             )}
@@ -122,7 +137,7 @@ const AuthPage: React.FC = () => {
                   onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
                   className="text-sm text-primary hover:underline"
                 >
-                  {mode === 'login' ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+                  {mode === 'login' ? t('auth.toRegister') : t('auth.toLogin')}
                 </button>
               </div>
             )}

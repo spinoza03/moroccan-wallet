@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap } from 'lucide-react';
+import type { Language } from '@/lib/i18n';
 
 const BANK_INFO = {
   titulaire: 'ILYAS ALLALI',
@@ -14,6 +17,7 @@ const BANK_INFO = {
 
 const SubscriptionPage: React.FC = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
+  const { t, lang, setLang } = useI18n();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly' | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -39,7 +43,7 @@ const SubscriptionPage: React.FC = () => {
       .upload(filePath, receiptFile);
 
     if (uploadError) {
-      alert('Erreur lors du téléchargement. Réessayez.');
+      alert(t('sub.uploadError'));
       setUploading(false);
       return;
     }
@@ -60,6 +64,11 @@ const SubscriptionPage: React.FC = () => {
     setUploading(false);
   };
 
+  const bankFieldLabel = (key: string) => {
+    if (key === 'titulaire') return t('sub.bankHolder');
+    return key.toUpperCase();
+  };
+
   if (profile?.subscription_status === 'pending' || submitted) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -67,11 +76,9 @@ const SubscriptionPage: React.FC = () => {
           <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-10 h-10 text-yellow-600" />
           </div>
-          <h2 className="text-2xl font-bold">Reçu envoyé !</h2>
-          <p className="text-muted-foreground">
-            Votre reçu de paiement a été reçu. Votre abonnement sera activé dans les 24h après vérification du paiement.
-          </p>
-          <Button variant="outline" onClick={signOut}>Se déconnecter</Button>
+          <h2 className="text-2xl font-bold">{t('sub.thankYouTitle')}</h2>
+          <p className="text-muted-foreground">{t('sub.thankYouDesc')}</p>
+          <Button variant="outline" onClick={signOut}>{t('sub.signOut')}</Button>
         </div>
       </div>
     );
@@ -86,7 +93,18 @@ const SubscriptionPage: React.FC = () => {
             <span className="text-primary-foreground font-bold text-2xl">م</span>
           </div>
           <h1 className="text-2xl font-bold">Mizaniyti</h1>
-          <p className="text-muted-foreground text-sm mt-1">Choisissez votre abonnement pour commencer</p>
+          <p className="text-muted-foreground text-sm mt-1">{t('sub.tagline')}</p>
+        </div>
+
+        {/* Language switcher */}
+        <div className="flex justify-center">
+          <Select value={lang} onValueChange={(v) => setLang(v as Language)}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fr">Français</SelectItem>
+              <SelectItem value="darija">الدارجة المغربية</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Plans */}
@@ -99,7 +117,7 @@ const SubscriptionPage: React.FC = () => {
           >
             <Calendar className="w-5 h-5 text-primary mb-2" />
             <p className="font-bold text-lg">20 DH</p>
-            <p className="text-sm text-muted-foreground">Par mois</p>
+            <p className="text-sm text-muted-foreground">{t('sub.monthly')}</p>
           </button>
 
           <button
@@ -113,7 +131,7 @@ const SubscriptionPage: React.FC = () => {
             </div>
             <Crown className="w-5 h-5 text-yellow-500 mb-2" />
             <p className="font-bold text-lg">99 DH</p>
-            <p className="text-sm text-muted-foreground">Par an</p>
+            <p className="text-sm text-muted-foreground">{t('sub.yearly')}</p>
           </button>
         </div>
 
@@ -121,20 +139,13 @@ const SubscriptionPage: React.FC = () => {
         <Card>
           <CardContent className="pt-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" /> Ce qui est inclus
+              <Zap className="w-4 h-4 text-primary" /> {t('sub.included')}
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {[
-                'Suivi illimité de transactions',
-                'Gestion des dettes et créances',
-                'Objectifs d\'épargne personnalisés',
-                'Tableau de bord avec graphiques',
-                'Sauvegarde cloud sécurisée',
-                'Mise à jour continue',
-              ].map((f, i) => (
-                <li key={i} className="flex items-center gap-2">
+              {(['sub.f1', 'sub.f2', 'sub.f3', 'sub.f4', 'sub.f5', 'sub.f6'] as const).map((key) => (
+                <li key={key} className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  {f}
+                  {t(key)}
                 </li>
               ))}
             </ul>
@@ -145,17 +156,18 @@ const SubscriptionPage: React.FC = () => {
         {selectedPlan && (
           <Card className="border-primary/30">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Coordonnées bancaires</CardTitle>
+              <CardTitle className="text-base">{t('sub.bankTitle')}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Veuillez effectuer un virement de{' '}
-                <strong>{selectedPlan === 'monthly' ? '20 DH' : '99 DH'}</strong> sur ce compte :
+                {t('sub.bankDesc')}{' '}
+                <strong>{selectedPlan === 'monthly' ? '20 DH' : '99 DH'}</strong>{' '}
+                {t('sub.bankDescOn')}
               </p>
             </CardHeader>
             <CardContent className="space-y-2">
               {Object.entries(BANK_INFO).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{key === 'titulaire' ? 'Titulaire' : key === 'rib' ? 'RIB' : key.toUpperCase()}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{bankFieldLabel(key)}</p>
                     <p className="text-sm font-mono font-medium">{value}</p>
                   </div>
                   <button
@@ -174,19 +186,17 @@ const SubscriptionPage: React.FC = () => {
         {selectedPlan && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Envoyer le reçu de paiement</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Après avoir effectué le virement, joignez le reçu ici pour activer votre abonnement.
-              </p>
+              <CardTitle className="text-base">{t('sub.uploadTitle')}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t('sub.uploadDesc')}</p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleReceiptUpload} className="space-y-3">
                 <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-primary/50 transition-colors">
                   <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                   <span className="text-sm font-medium text-foreground">
-                    {receiptFile ? receiptFile.name : 'Cliquez pour choisir un fichier'}
+                    {receiptFile ? receiptFile.name : t('sub.chooseFile')}
                   </span>
-                  <span className="text-xs text-muted-foreground mt-1">JPG, PNG ou PDF</span>
+                  <span className="text-xs text-muted-foreground mt-1">{t('sub.fileTypes')}</span>
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -196,7 +206,7 @@ const SubscriptionPage: React.FC = () => {
                   />
                 </label>
                 <Button type="submit" className="w-full" disabled={!receiptFile || uploading}>
-                  {uploading ? 'Envoi en cours...' : 'Envoyer le reçu'}
+                  {uploading ? t('sub.sending') : t('sub.send')}
                 </Button>
               </form>
             </CardContent>
@@ -205,7 +215,7 @@ const SubscriptionPage: React.FC = () => {
 
         <div className="text-center pb-6">
           <button onClick={signOut} className="text-sm text-muted-foreground hover:underline">
-            Se déconnecter
+            {t('sub.signOut')}
           </button>
         </div>
       </div>

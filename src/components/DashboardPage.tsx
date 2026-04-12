@@ -6,18 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, Legend,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, Target, UserMinus, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+const MONTHS_DA = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
 export const DashboardPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { transactions, debtProfiles, savingsGoals, settings, getSavingsTotal, getDebtRemaining } = useStore();
 
+  const MONTHS = lang === 'darija' ? MONTHS_DA : MONTHS_FR;
+
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth(); // 0-indexed
+  const currentMonth = new Date().getMonth();
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -29,7 +31,6 @@ export const DashboardPage: React.FC = () => {
     return Array.from(ys).sort((a, b) => a - b);
   }, [transactions, currentYear]);
 
-  // Period stats based on selected month/year (calendar month, not salary-based)
   const stats = useMemo(() => {
     const monthTxs = transactions.filter(tx => {
       const d = new Date(tx.date);
@@ -45,22 +46,17 @@ export const DashboardPage: React.FC = () => {
     const variableExpenses = variableItems.reduce((s, t) => s + t.amount, 0);
     const totalExpenses = fixedExpenses + variableExpenses;
     const balance = totalIncome - totalExpenses;
-    const savings = balance; // What's left = épargne de la période
+    const savings = balance;
     const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
 
-    // Group income by moroccanCategory
     const incomeByCategory: Record<string, number> = {};
     incomeItems.forEach(t => {
       incomeByCategory[t.moroccanCategory] = (incomeByCategory[t.moroccanCategory] || 0) + t.amount;
     });
-
-    // Group fixed expenses by moroccanCategory
     const fixedByCategory: Record<string, number> = {};
     fixedItems.forEach(t => {
       fixedByCategory[t.moroccanCategory] = (fixedByCategory[t.moroccanCategory] || 0) + t.amount;
     });
-
-    // Group variable expenses by moroccanCategory
     const variableByCategory: Record<string, number> = {};
     variableItems.forEach(t => {
       variableByCategory[t.moroccanCategory] = (variableByCategory[t.moroccanCategory] || 0) + t.amount;
@@ -73,9 +69,8 @@ export const DashboardPage: React.FC = () => {
     };
   }, [transactions, selectedYear, selectedMonth]);
 
-  // 12-month balance trend for selected year
   const monthlyBalances = useMemo(() => {
-    return MONTHS_FR.map((label, mIdx) => {
+    return MONTHS.map((label, mIdx) => {
       const monthTxs = transactions.filter(tx => {
         const d = new Date(tx.date);
         return d.getFullYear() === selectedYear && d.getMonth() === mIdx;
@@ -84,9 +79,8 @@ export const DashboardPage: React.FC = () => {
       const expenses = monthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
       return { month: label, solde: income - expenses, income, expenses };
     });
-  }, [transactions, selectedYear]);
+  }, [transactions, selectedYear, MONTHS]);
 
-  // Cumulative end-of-month balance for selected year
   const cumulativeBalances = useMemo(() => {
     let running = 0;
     return monthlyBalances.map(m => {
@@ -95,7 +89,6 @@ export const DashboardPage: React.FC = () => {
     });
   }, [monthlyBalances]);
 
-  // Debts & Créances totals
   const { totalDebts, totalCredits } = useMemo(() => {
     let totalDebts = 0;
     let totalCredits = 0;
@@ -107,7 +100,6 @@ export const DashboardPage: React.FC = () => {
     return { totalDebts, totalCredits };
   }, [debtProfiles, getDebtRemaining]);
 
-  // Target (total savings goals)
   const { totalSaved, totalTarget } = useMemo(() => {
     let totalSaved = 0;
     let totalTarget = 0;
@@ -120,7 +112,6 @@ export const DashboardPage: React.FC = () => {
 
   const targetPercent = totalTarget > 0 ? Math.min(100, (totalSaved / totalTarget) * 100) : 0;
 
-  // Pie chart data
   const fixedPieData = Object.entries(stats.fixedByCategory)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
@@ -130,7 +121,7 @@ export const DashboardPage: React.FC = () => {
     .sort((a, b) => b.value - a.value);
 
   const targetPieData = totalTarget > 0
-    ? [{ name: 'Épargné', value: totalSaved }, { name: 'Reste', value: Math.max(0, totalTarget - totalSaved) }]
+    ? [{ name: t('dash.saved'), value: totalSaved }, { name: t('dash.remaining'), value: Math.max(0, totalTarget - totalSaved) }]
     : [];
 
   const PIE_COLORS = [
@@ -148,13 +139,11 @@ export const DashboardPage: React.FC = () => {
     else setSelectedMonth(m => m + 1);
   };
 
-  const isCurrentOrFuture = selectedYear > currentYear || (selectedYear === currentYear && selectedMonth >= currentMonth);
-
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header: Mon Budget + month selector */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Mon Budget</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('dash.title')}</h1>
         <div className="flex items-center gap-1">
           {years.map(y => (
             <button
@@ -168,12 +157,12 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Month selector row */}
+      {/* Month selector */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
         <button onClick={prevMonth} className="p-1 rounded hover:bg-muted shrink-0">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        {MONTHS_FR.map((m, i) => (
+        {MONTHS.map((m, i) => (
           <button
             key={m}
             onClick={() => setSelectedMonth(i)}
@@ -189,13 +178,13 @@ export const DashboardPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Dettes & Créances top cards */}
+      {/* Dettes & Créances */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-destructive/10 border-destructive/30">
           <CardContent className="py-3 px-4">
             <div className="flex items-center gap-2 mb-1">
               <UserMinus className="w-4 h-4 text-destructive" />
-              <p className="text-xs font-semibold text-destructive">Dettes</p>
+              <p className="text-xs font-semibold text-destructive">{t('dash.debts')}</p>
             </div>
             <p className="text-lg font-bold text-destructive">{formatMAD(totalDebts)}</p>
           </CardContent>
@@ -204,20 +193,20 @@ export const DashboardPage: React.FC = () => {
           <CardContent className="py-3 px-4">
             <div className="flex items-center gap-2 mb-1">
               <UserPlus className="w-4 h-4 text-green-600" />
-              <p className="text-xs font-semibold text-green-700">Créances</p>
+              <p className="text-xs font-semibold text-green-700">{t('dash.credits')}</p>
             </div>
             <p className="text-lg font-bold text-green-600">{formatMAD(totalCredits)}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Solde fin de période + Épargne */}
+      {/* Balance & Savings */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2 mb-1">
               <Wallet className="w-4 h-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Solde fin de période</p>
+              <p className="text-xs text-muted-foreground">{t('dash.balance')}</p>
             </div>
             <p className={`text-2xl font-bold ${stats.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
               {stats.balance >= 0 ? '+' : ''}{formatMAD(stats.balance)}
@@ -228,7 +217,7 @@ export const DashboardPage: React.FC = () => {
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2 mb-1">
               <PiggyBank className="w-4 h-4 text-accent" />
-              <p className="text-xs text-muted-foreground">Épargne de la période</p>
+              <p className="text-xs text-muted-foreground">{t('dash.periodSavings')}</p>
             </div>
             <p className={`text-2xl font-bold ${stats.savings >= 0 ? 'text-green-600' : 'text-destructive'}`}>
               {stats.savings >= 0 ? '+' : ''}{formatMAD(stats.savings)}
@@ -240,7 +229,7 @@ export const DashboardPage: React.FC = () => {
       {/* 12-month balance chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Soldes fin de mois — {selectedYear}</CardTitle>
+          <CardTitle className="text-sm">{t('dash.monthlyBalances')} — {selectedYear}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>
@@ -249,30 +238,30 @@ export const DashboardPage: React.FC = () => {
               <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
               <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(v: number) => formatMAD(v)} labelFormatter={l => `${l} ${selectedYear}`} />
-              <Line type="monotone" dataKey="solde" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Solde cumulé" />
+              <Line type="monotone" dataKey="solde" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name={t('dash.cumBalance')} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Revenus de la période */}
+      {/* Income table */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-green-500" /> Revenus de la période
+            <TrendingUp className="w-4 h-4 text-green-500" /> {t('dash.periodIncome')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {Object.keys(stats.incomeByCategory).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Aucun revenu ce mois</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t('dash.noIncome')}</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-blue-600 text-white">
-                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">Revenus</th>
-                      <th className="text-right px-2 py-1.5 font-medium">Montant</th>
+                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">{t('dash.colIncome')}</th>
+                      <th className="text-right px-2 py-1.5 font-medium">{t('dash.colAmount')}</th>
                       <th className="text-right px-2 py-1.5 rounded-tr font-medium">%</th>
                     </tr>
                   </thead>
@@ -287,7 +276,7 @@ export const DashboardPage: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr className="bg-blue-600 text-white font-semibold">
-                      <td className="px-2 py-1.5 rounded-bl">Total</td>
+                      <td className="px-2 py-1.5 rounded-bl">{t('dash.total')}</td>
                       <td className="px-2 py-1.5 text-right">{formatMAD(stats.totalIncome)}</td>
                       <td className="px-2 py-1.5 text-right rounded-br">100%</td>
                     </tr>
@@ -311,24 +300,24 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dépenses fixes de période */}
+      {/* Fixed expenses table */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-green-700" /> Dépenses fixes de période
+            <TrendingDown className="w-4 h-4 text-green-700" /> {t('dash.fixedExpenses')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {Object.keys(stats.fixedByCategory).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Aucune dépense fixe ce mois</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t('dash.noFixed')}</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-green-700 text-white">
-                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">Dépenses fixes</th>
-                      <th className="text-right px-2 py-1.5 font-medium">Montant</th>
+                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">{t('dash.colFixed')}</th>
+                      <th className="text-right px-2 py-1.5 font-medium">{t('dash.colAmount')}</th>
                       <th className="text-right px-2 py-1.5 rounded-tr font-medium">%</th>
                     </tr>
                   </thead>
@@ -343,7 +332,7 @@ export const DashboardPage: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr className="bg-green-700 text-white font-semibold">
-                      <td className="px-2 py-1.5 rounded-bl">Total</td>
+                      <td className="px-2 py-1.5 rounded-bl">{t('dash.total')}</td>
                       <td className="px-2 py-1.5 text-right">{formatMAD(stats.fixedExpenses)}</td>
                       <td className="px-2 py-1.5 text-right rounded-br">100%</td>
                     </tr>
@@ -365,24 +354,24 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dépenses variables de période */}
+      {/* Variable expenses table */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-orange-500" /> Dépenses variables de période
+            <TrendingDown className="w-4 h-4 text-orange-500" /> {t('dash.varExpenses')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {Object.keys(stats.variableByCategory).length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Aucune dépense variable ce mois</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t('dash.noVariable')}</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-orange-500 text-white">
-                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">Dépenses variables</th>
-                      <th className="text-right px-2 py-1.5 font-medium">Montant</th>
+                      <th className="text-left px-2 py-1.5 rounded-tl font-medium">{t('dash.colVariable')}</th>
+                      <th className="text-right px-2 py-1.5 font-medium">{t('dash.colAmount')}</th>
                       <th className="text-right px-2 py-1.5 rounded-tr font-medium">%</th>
                     </tr>
                   </thead>
@@ -397,7 +386,7 @@ export const DashboardPage: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr className="bg-orange-500 text-white font-semibold">
-                      <td className="px-2 py-1.5 rounded-bl">Total</td>
+                      <td className="px-2 py-1.5 rounded-bl">{t('dash.total')}</td>
                       <td className="px-2 py-1.5 text-right">{formatMAD(stats.variableExpenses)}</td>
                       <td className="px-2 py-1.5 text-right rounded-br">100%</td>
                     </tr>
@@ -419,7 +408,7 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Target — savings goals total */}
+      {/* Target */}
       {totalTarget > 0 && (
         <Card className="border-blue-500/30 bg-blue-500/5">
           <CardContent className="py-4">
@@ -427,14 +416,14 @@ export const DashboardPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="w-5 h-5 text-blue-500" />
-                  <span className="font-bold text-lg">Target</span>
+                  <span className="font-bold text-lg">{t('dash.target')}</span>
                 </div>
                 <p className="text-3xl font-bold text-blue-600">{formatMAD(totalTarget)}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Épargné : {formatMAD(totalSaved)} ({targetPercent.toFixed(0)}%)
+                  {t('dash.saved')} : {formatMAD(totalSaved)} ({targetPercent.toFixed(0)}%)
                 </p>
                 <p className="text-sm text-orange-500 font-medium">
-                  Reste : {formatMAD(Math.max(0, totalTarget - totalSaved))}
+                  {t('dash.remaining')} : {formatMAD(Math.max(0, totalTarget - totalSaved))}
                 </p>
               </div>
               {targetPieData.length > 0 && (

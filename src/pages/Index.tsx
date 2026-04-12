@@ -14,7 +14,14 @@ import { LayoutDashboard, ArrowLeftRight, Users, Target, Settings, LogOut, HelpC
 type Tab = 'dashboard' | 'transactions' | 'debts' | 'savings' | 'settings';
 
 const AppContent: React.FC = () => {
-  const [tab, setTab] = useState<Tab>('dashboard');
+  const [tab, setTab] = useState<Tab>(() => {
+    return (localStorage.getItem('mz_tab') as Tab) || 'dashboard';
+  });
+
+  const handleSetTab = (t: Tab) => {
+    localStorage.setItem('mz_tab', t);
+    setTab(t);
+  };
   const [showTutorial, setShowTutorial] = useState(false);
   const { t, lang } = useI18n();
   const { signOut, profile } = useAuth();
@@ -70,7 +77,7 @@ const AppContent: React.FC = () => {
           {tabs.map(({ key, icon: Icon, labelKey }) => (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => handleSetTab(key)}
               className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
                 tab === key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}

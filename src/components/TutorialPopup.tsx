@@ -5,34 +5,51 @@ import { Button } from '@/components/ui/button';
 
 export type TutorialKey = 'dashboard' | 'transactions' | 'debts' | 'savings' | 'settings';
 
+/* ─── inline keyframe styles injected once ─── */
+const ANIM_STYLES = `
+@keyframes tut-bar   { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+@keyframes tut-up    { from { height:0; }             }
+@keyframes tut-fade  { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
+@keyframes tut-left  { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+@keyframes tut-right { from { opacity:0; transform:translateX(10px);  } to { opacity:1; transform:translateX(0); } }
+@keyframes tut-pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.07);} }
+@keyframes tut-bounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+@keyframes tut-prog  { from{width:0;} to{width:65%;} }
+@keyframes tut-coin  { 0%{opacity:1;transform:translateY(-18px);} 80%{opacity:1;transform:translateY(6px);} 100%{opacity:0;transform:translateY(6px);} }
+@keyframes tut-spin  { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+@keyframes tut-thumb { 0%{left:8%} 50%{left:68%} 100%{left:45%} }
+@keyframes tut-slide-up { from{transform:translateY(40px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+`;
+
+const a = (name: string, duration = '0.7s', delay = '0s', extra = 'ease both') =>
+  ({ animation: `${name} ${duration} ${delay} ${extra}` } as React.CSSProperties);
+
+/* ─── step definitions ─── */
 interface Step {
   icon: React.ReactNode;
   title: { fr: string; darija: string };
-  desc: { fr: string; darija: string };
+  desc:  { fr: string; darija: string };
   animation: React.ReactNode;
 }
 
 const tutorials: Record<TutorialKey, Step[]> = {
+  /* ── DASHBOARD ── */
   dashboard: [
     {
       icon: <LayoutDashboard className="w-6 h-6 text-primary" />,
       title: { fr: 'Tableau de Bord', darija: 'لوحة التحكم' },
       desc: {
-        fr: 'Visualisez votre budget mensuel : revenus, dépenses fixes, variables et votre solde restant.',
-        darija: 'شوف ميزانيتك ديال الشهر: المداخيل، المصاريف الثابتة والمتغيرة والرصيد الباقي.',
+        fr:     'Visualisez votre budget mensuel : revenus, dépenses fixes, variables et votre solde.',
+        darija: 'شوف ميزانيتك ديال الشهر: مداخيل، مصاريف ثابتة ومتغيرة والرصيد الباقي.',
       },
       animation: (
-        <div className="flex gap-2 justify-center items-end h-16">
-          {[60, 90, 40, 75, 55, 85, 50].map((h, i) => (
-            <div
-              key={i}
-              className="w-5 rounded-t-sm bg-primary/80 animate-grow-bar"
-              style={{
-                height: `${h}%`,
-                animationDelay: `${i * 100}ms`,
-                animationFillMode: 'both',
-              }}
-            />
+        <div style={{ display:'flex', gap:6, alignItems:'flex-end', height:64 }}>
+          {[55,80,40,70,50,85,45].map((h,i) => (
+            <div key={i} style={{
+              width:18, background:'hsl(var(--primary)/.7)', borderRadius:'4px 4px 0 0',
+              height:`${h}%`, transformOrigin:'bottom',
+              ...a('tut-bar','0.5s',`${i*80}ms`),
+            }} />
           ))}
         </div>
       ),
@@ -41,25 +58,25 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <LayoutDashboard className="w-6 h-6 text-primary" />,
       title: { fr: 'Naviguer par mois', darija: 'تنقل بين الشهور' },
       desc: {
-        fr: 'Utilisez les flèches ou cliquez sur le mois pour changer de période et voir l\'historique.',
-        darija: 'استخدم السهمين أو كليك على الشهر باش تشوف تاريخ الشهور اللي فاتوا.',
+        fr:     'Cliquez sur le mois ou utilisez les flèches pour voir l\'historique de chaque période.',
+        darija: 'كليك على الشهر أو استخدم السهمين باش تشوف كل فترة.',
       },
       animation: (
-        <div className="flex items-center gap-2 justify-center">
-          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center animate-pulse-left">
-            <ChevronLeft className="w-4 h-4 text-primary" />
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:28, height:28, borderRadius:'50%', background:'hsl(var(--muted))', display:'flex', alignItems:'center', justifyContent:'center', ...a('tut-pulse','1.4s','0s','ease-in-out infinite') }}>
+            <ChevronLeft style={{ width:16, height:16, color:'hsl(var(--primary))' }} />
           </div>
-          {['Jan', 'Fév', 'Mar'].map((m, i) => (
-            <div
-              key={m}
-              className={`px-2 py-1 rounded text-xs font-medium transition-all ${i === 1 ? 'bg-primary text-primary-foreground scale-110' : 'bg-muted text-muted-foreground'}`}
-              style={{ animationDelay: `${i * 150}ms` }}
-            >
-              {m}
-            </div>
+          {['يناير','فبراير','مارس'].map((m,i) => (
+            <div key={m} style={{
+              padding:'3px 8px', borderRadius:6, fontSize:11, fontWeight:600,
+              background: i===1 ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+              color:       i===1 ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
+              transform:   i===1 ? 'scale(1.12)' : 'scale(1)',
+              ...a('tut-fade','0.4s',`${i*120}ms`),
+            }}>{m}</div>
           ))}
-          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center animate-pulse-right">
-            <ChevronRight className="w-4 h-4 text-primary" />
+          <div style={{ width:28, height:28, borderRadius:'50%', background:'hsl(var(--muted))', display:'flex', alignItems:'center', justifyContent:'center', ...a('tut-pulse','1.4s','200ms','ease-in-out infinite') }}>
+            <ChevronRight style={{ width:16, height:16, color:'hsl(var(--primary))' }} />
           </div>
         </div>
       ),
@@ -68,65 +85,63 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <LayoutDashboard className="w-6 h-6 text-primary" />,
       title: { fr: 'Dettes & Target', darija: 'الديون والهدف' },
       desc: {
-        fr: 'En bas vous trouverez vos dettes, créances et la progression vers vos objectifs d\'épargne.',
-        darija: 'فتحت كاينين ديونك، حقوقك والتقدم ديال أهداف التوفير ديالك.',
+        fr:     'Les cartes en haut affichent vos dettes, créances et la progression de vos objectifs d\'épargne.',
+        darija: 'البطاقات فوق كتعرض ديونك، حقوقك والتقدم ديال أهداف التوفير.',
       },
       animation: (
-        <div className="flex gap-4 justify-center items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center animate-bounce-slow">
-              <Users className="w-5 h-5 text-destructive" />
+        <div style={{ display:'flex', gap:20, justifyContent:'center' }}>
+          {[
+            { icon:'😰', label:'-1,200 د.م', color:'hsl(var(--destructive))', bg:'hsl(var(--destructive)/.12)', delay:'0ms' },
+            { icon:'😊', label:'+800 د.م',  color:'#16a34a',                  bg:'#dcfce7',                     delay:'200ms' },
+            { icon:'🎯', label:'75%',        color:'hsl(var(--primary))',       bg:'hsl(var(--primary)/.1)',      delay:'400ms' },
+          ].map(({ icon, label, color, bg, delay }) => (
+            <div key={label} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, ...a('tut-bounce','1.8s',delay,'ease-in-out infinite') }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', background:bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{icon}</div>
+              <span style={{ fontSize:10, fontWeight:700, color }}>{label}</span>
             </div>
-            <span className="text-[10px] text-destructive font-medium">-500 DH</span>
-          </div>
-          <div className="w-px h-8 bg-border" />
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center animate-bounce-slow" style={{ animationDelay: '200ms' }}>
-              <Target className="w-5 h-5 text-green-600" />
-            </div>
-            <span className="text-[10px] text-green-600 font-medium">75%</span>
-          </div>
+          ))}
         </div>
       ),
     },
   ],
 
+  /* ── TRANSACTIONS ── */
   transactions: [
     {
       icon: <ArrowLeftRight className="w-6 h-6 text-primary" />,
       title: { fr: 'Ajouter une transaction', darija: 'زيد معاملة' },
       desc: {
-        fr: 'Appuyez sur "+ Ajouter Transaction", choisissez le type (revenu / dépense) et le poste.',
-        darija: 'كليك على "زيد معاملة"، اختار النوع (دخل أو مصروف) والخانة.',
+        fr:     'Appuyez sur "+ Ajouter Transaction", choisissez revenu ou dépense, la catégorie et le montant.',
+        darija: 'كليك على "زيد معاملة"، اختار نوعها، الخانة والمبلغ.',
       },
       animation: (
-        <div className="flex flex-col gap-2 items-center">
-          <div className="w-32 h-8 rounded-lg bg-primary flex items-center justify-center gap-1 animate-pulse-scale">
-            <span className="text-primary-foreground text-xs font-medium">+ زيد معاملة</span>
+        <div style={{ display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
+          <div style={{ padding:'8px 20px', background:'hsl(var(--primary))', color:'hsl(var(--primary-foreground))', borderRadius:10, fontSize:12, fontWeight:600, ...a('tut-pulse','1.6s','0s','ease-in-out infinite') }}>
+            + زيد معاملة
           </div>
-          <div className="flex gap-2 mt-1">
-            <div className="px-3 py-1 rounded-full bg-green-500/20 border border-green-500/50 text-xs text-green-700 animate-fade-in-left">دخل</div>
-            <div className="px-3 py-1 rounded-full bg-destructive/20 border border-destructive/50 text-xs text-destructive animate-fade-in-right">مصروف</div>
+          <div style={{ display:'flex', gap:8 }}>
+            <div style={{ padding:'4px 12px', borderRadius:20, fontSize:11, fontWeight:600, background:'#dcfce7', color:'#15803d', border:'1px solid #86efac', ...a('tut-left','0.4s','200ms') }}>دخل ↑</div>
+            <div style={{ padding:'4px 12px', borderRadius:20, fontSize:11, fontWeight:600, background:'hsl(var(--destructive)/.1)', color:'hsl(var(--destructive))', border:'1px solid hsl(var(--destructive)/.3)', ...a('tut-right','0.4s','350ms') }}>مصروف ↓</div>
           </div>
         </div>
       ),
     },
     {
       icon: <ArrowLeftRight className="w-6 h-6 text-primary" />,
-      title: { fr: 'Dépense fixe vs variable', darija: 'مصروف ثابت أو متغير' },
+      title: { fr: 'Fixe vs Variable', darija: 'ثابت أو متغير' },
       desc: {
-        fr: 'Fixe = loyer, factures... Variable = sorties, vêtements... Bien les séparer pour un budget précis.',
-        darija: 'الثابت = الكرا، الفاتورات... المتغير = السوارتي، الحوايج... فرق بينهم باش تكون ميزانيتك مضبوطة.',
+        fr:     'Fixe = loyer, factures, crédit... Variable = sorties, vêtements, restaurants... Séparez-les bien !',
+        darija: 'الثابت = الكرا، الفاتورات، القرض... المتغير = السوارتي، الحوايج... فرق بينهم مزيان!',
       },
       animation: (
-        <div className="grid grid-cols-2 gap-2 w-full max-w-48">
-          <div className="rounded-lg bg-green-500/10 border border-green-500/30 p-2 text-center animate-slide-in-left">
-            <div className="text-[10px] font-bold text-green-700">ثابت</div>
-            <div className="text-[9px] text-muted-foreground mt-0.5">الكرا • WIFI</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, width:220 }}>
+          <div style={{ borderRadius:10, background:'#dcfce7', border:'1px solid #86efac', padding:'8px', textAlign:'center', ...a('tut-left','0.4s') }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#15803d' }}>ثابت 🏠</div>
+            <div style={{ fontSize:9, color:'#6b7280', marginTop:3 }}>الكرا • WIFI • قرض</div>
           </div>
-          <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-2 text-center animate-slide-in-right">
-            <div className="text-[10px] font-bold text-orange-700">متغير</div>
-            <div className="text-[9px] text-muted-foreground mt-0.5">سوارتي • حوايج</div>
+          <div style={{ borderRadius:10, background:'#fff7ed', border:'1px solid #fdba74', padding:'8px', textAlign:'center', ...a('tut-right','0.4s','150ms') }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#c2410c' }}>متغير 🛍️</div>
+            <div style={{ fontSize:9, color:'#6b7280', marginTop:3 }}>سوارتي • مطعم</div>
           </div>
         </div>
       ),
@@ -135,21 +150,22 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <ArrowLeftRight className="w-6 h-6 text-primary" />,
       title: { fr: 'Filtrer & Rechercher', darija: 'فلتر وقلب' },
       desc: {
-        fr: 'Utilisez la barre de recherche ou filtrez par type et par mois pour retrouver n\'importe quelle transaction.',
+        fr:     'Utilisez la barre de recherche ou filtrez par type et par mois pour retrouver n\'importe quelle transaction.',
         darija: 'استخدم الـSearch أو فلتر حسب النوع والشهر باش تلقى أي معاملة بسرعة.',
       },
       animation: (
-        <div className="flex flex-col gap-2 items-center w-full max-w-52">
-          <div className="w-full h-8 rounded-lg bg-muted border border-border flex items-center px-2 gap-2 animate-pulse-scale">
-            <div className="w-3 h-3 rounded-full border-2 border-muted-foreground" />
-            <div className="h-2 bg-muted-foreground/30 rounded flex-1 animate-shimmer" />
+        <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'center', width:220 }}>
+          <div style={{ width:'100%', height:32, borderRadius:8, border:'1px solid hsl(var(--border))', background:'hsl(var(--muted))', display:'flex', alignItems:'center', padding:'0 10px', gap:8, ...a('tut-pulse','2s','0s','ease-in-out infinite') }}>
+            <span style={{ fontSize:13, color:'hsl(var(--muted-foreground))' }}>🔍</span>
+            <div style={{ flex:1, height:8, borderRadius:4, background:'hsl(var(--muted-foreground)/.2)' }} />
           </div>
-          <div className="flex gap-1">
-            {['كلشي', 'دخل', 'مصروف'].map((f, i) => (
-              <div key={f} className={`px-2 py-0.5 rounded text-[10px] font-medium ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                style={{ animationDelay: `${i * 100}ms` }}>
-                {f}
-              </div>
+          <div style={{ display:'flex', gap:6 }}>
+            {['كلشي','دخل','مصروف'].map((f,i) => (
+              <div key={f} style={{ padding:'3px 10px', borderRadius:6, fontSize:10, fontWeight:600,
+                background: i===0 ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+                color:       i===0 ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
+                ...a('tut-fade','0.3s',`${i*100}ms`),
+              }}>{f}</div>
             ))}
           </div>
         </div>
@@ -157,30 +173,27 @@ const tutorials: Record<TutorialKey, Step[]> = {
     },
   ],
 
+  /* ── DEBTS ── */
   debts: [
     {
       icon: <Users className="w-6 h-6 text-primary" />,
       title: { fr: 'Dettes & Créances', darija: 'الديون والحقوق' },
       desc: {
-        fr: 'Suivez l\'argent que vous devez (dettes) et celui qu\'on vous doit (créances).',
+        fr:     'Suivez l\'argent que vous devez (dettes) et l\'argent qu\'on vous doit (créances).',
         darija: 'تتبع الفلوس لي خاصك تعطيها (ديون) والفلوس لي خاصهم يعطيوك إياها (حقوق).',
       },
       animation: (
-        <div className="flex gap-4 justify-center">
-          <div className="flex flex-col items-center gap-1 animate-slide-in-left">
-            <div className="w-12 h-12 rounded-full bg-destructive/10 border-2 border-destructive/30 flex items-center justify-center">
-              <Users className="w-5 h-5 text-destructive" />
+        <div style={{ display:'flex', gap:24, justifyContent:'center' }}>
+          {[
+            { emoji:'😰', title:'أنا خاصني', amount:'-1,200 د.م', color:'hsl(var(--destructive))', bg:'hsl(var(--destructive)/.1)', delay:'0ms' },
+            { emoji:'🤝', title:'خاصهم ليا', amount:'+800 د.م',  color:'#16a34a',                  bg:'#dcfce7',                    delay:'250ms' },
+          ].map(({ emoji,title,amount,color,bg,delay }) => (
+            <div key={title} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, ...a('tut-fade','0.5s',delay) }}>
+              <div style={{ width:48, height:48, borderRadius:'50%', background:bg, border:`2px solid ${color}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, ...a('tut-bounce','2s',delay,'ease-in-out infinite') }}>{emoji}</div>
+              <span style={{ fontSize:10, fontWeight:700, color }}>{title}</span>
+              <span style={{ fontSize:10, color:'hsl(var(--muted-foreground))' }}>{amount}</span>
             </div>
-            <span className="text-[10px] font-bold text-destructive">أنا خاصني</span>
-            <span className="text-[10px] text-muted-foreground">-1,200 د.م</span>
-          </div>
-          <div className="flex flex-col items-center gap-1 animate-slide-in-right">
-            <div className="w-12 h-12 rounded-full bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center">
-              <Users className="w-5 h-5 text-green-600" />
-            </div>
-            <span className="text-[10px] font-bold text-green-700">خاصهم ليا</span>
-            <span className="text-[10px] text-muted-foreground">+800 د.م</span>
-          </div>
+          ))}
         </div>
       ),
     },
@@ -188,20 +201,20 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <Users className="w-6 h-6 text-primary" />,
       title: { fr: 'Ajouter un profil', darija: 'زيد بروفيل' },
       desc: {
-        fr: 'Cliquez "+ Ajouter Profil", entrez le nom de la personne, le type et le montant total.',
-        darija: 'كليك "+ زيد بروفيل"، دخل سمية الشخص، النوع والمبلغ الكامل.',
+        fr:     'Cliquez "+ Ajouter Profil", entrez le nom, choisissez le type (dette ou créance) et le montant.',
+        darija: 'كليك على "+ زيد بروفيل"، دخل السمية، اختار النوع (دين أو حق) والمبلغ.',
       },
       animation: (
-        <div className="flex flex-col gap-1.5 items-center w-full max-w-48">
-          <div className="w-full h-7 rounded bg-muted animate-shimmer flex items-center px-2">
-            <span className="text-[10px] text-muted-foreground">محمد...</span>
-          </div>
-          <div className="w-full h-7 rounded bg-destructive/10 border border-destructive/30 flex items-center px-2 animate-fade-in">
-            <span className="text-[10px] text-destructive">أنا خاصني (دين)</span>
-          </div>
-          <div className="w-full h-7 rounded bg-muted animate-shimmer flex items-center px-2" style={{ animationDelay: '300ms' }}>
-            <span className="text-[10px] text-muted-foreground">500 د.م...</span>
-          </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'center', width:220 }}>
+          {[
+            { ph:'الإسم... محمد', color:'hsl(var(--foreground))', delay:'0ms' },
+            { ph:'أنا خاصني (دين) ↓', color:'hsl(var(--destructive))', delay:'150ms' },
+            { ph:'المبلغ... 500 د.م', color:'hsl(var(--foreground))', delay:'300ms' },
+          ].map(({ ph, color, delay }) => (
+            <div key={ph} style={{ width:'100%', height:28, borderRadius:6, border:'1px solid hsl(var(--border))', background:'hsl(var(--muted))', display:'flex', alignItems:'center', padding:'0 8px', ...a('tut-left','0.4s',delay) }}>
+              <span style={{ fontSize:10, color }}>{ph}</span>
+            </div>
+          ))}
         </div>
       ),
     },
@@ -209,52 +222,50 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <Users className="w-6 h-6 text-primary" />,
       title: { fr: 'Enregistrer un paiement', darija: 'سجل خلاص' },
       desc: {
-        fr: 'Sur chaque profil, appuyez "Ajouter Paiement" pour enregistrer les remboursements partiels ou totaux.',
-        darija: 'فكل بروفيل، كليك "زيد خلاص" باش تسجل الخلاص سواء جزئي أو كامل.',
+        fr:     'Appuyez "Ajouter Paiement" sur un profil pour enregistrer les remboursements au fur et à mesure.',
+        darija: 'كليك على "زيد خلاص" فأي بروفيل باش تسجل الخلاصات شوية بشوية.',
       },
       animation: (
-        <div className="flex flex-col gap-2 items-center">
-          <div className="w-40 rounded-lg border border-border p-2">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-medium">محمد</span>
-              <span className="text-[10px] text-destructive">-500 د.م</span>
+        <div style={{ display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
+          <div style={{ width:200, borderRadius:10, border:'1px solid hsl(var(--border))', padding:10, ...a('tut-fade','0.4s') }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:11, fontWeight:600 }}>
+              <span>محمد</span>
+              <span style={{ color:'hsl(var(--destructive))' }}>-500 د.م</span>
             </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full animate-progress-bar" style={{ width: '60%' }} />
+            <div style={{ height:6, background:'hsl(var(--muted))', borderRadius:4, overflow:'hidden' }}>
+              <div style={{ height:'100%', background:'hsl(var(--primary))', borderRadius:4, ...a('tut-prog','1.4s','300ms','ease both') }} />
             </div>
           </div>
-          <div className="w-28 h-7 rounded-lg bg-muted border border-border flex items-center justify-center gap-1 animate-bounce-slow">
-            <span className="text-[10px] text-foreground">+ زيد خلاص</span>
+          <div style={{ padding:'6px 16px', borderRadius:8, border:'1px solid hsl(var(--border))', fontSize:11, fontWeight:600, ...a('tut-bounce','1.8s','0s','ease-in-out infinite') }}>
+            + زيد خلاص 💸
           </div>
         </div>
       ),
     },
   ],
 
+  /* ── SAVINGS ── */
   savings: [
     {
       icon: <Target className="w-6 h-6 text-primary" />,
       title: { fr: 'Objectifs d\'Épargne', darija: 'أهداف التوفير' },
       desc: {
-        fr: 'Créez des objectifs nommés (voiture, voyage, mariage...) avec un montant cible.',
+        fr:     'Créez des objectifs nommés (voiture, voyage, mariage...) avec un montant cible.',
         darija: 'دير أهداف بأسماء (طوموبيل، سفر، عرس...) مع المبلغ لي بغيتي توفرو.',
       },
       animation: (
-        <div className="flex gap-3 justify-center">
+        <div style={{ display:'flex', gap:14, justifyContent:'center', alignItems:'flex-end', height:70 }}>
           {[
-            { name: 'طوموبيل', pct: 65, color: 'bg-blue-500' },
-            { name: 'سفر', pct: 30, color: 'bg-green-500' },
-            { name: 'عرس', pct: 85, color: 'bg-purple-500' },
-          ].map((g, i) => (
-            <div key={g.name} className="flex flex-col items-center gap-1" style={{ animationDelay: `${i * 150}ms` }}>
-              <div className="w-8 bg-muted rounded-full overflow-hidden h-14 flex flex-col-reverse">
-                <div
-                  className={`${g.color} rounded-full transition-all animate-grow-up`}
-                  style={{ height: `${g.pct}%`, animationDelay: `${i * 150}ms` }}
-                />
+            { name:'🚗', pct:65, color:'#3b82f6', delay:'0ms' },
+            { name:'✈️', pct:30, color:'#22c55e', delay:'150ms' },
+            { name:'💍', pct:85, color:'#a855f7', delay:'300ms' },
+          ].map(({ name, pct, color, delay }) => (
+            <div key={name} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <span style={{ fontSize:10, fontWeight:700, color }}>{pct}%</span>
+              <div style={{ width:28, height:56, background:'hsl(var(--muted))', borderRadius:6, overflow:'hidden', display:'flex', flexDirection:'column-reverse' }}>
+                <div style={{ background:color, borderRadius:6, ...a('tut-up','0.8s',delay,'ease both'), height:`${pct}%` }} />
               </div>
-              <span className="text-[9px] font-medium">{g.name}</span>
-              <span className="text-[9px] text-muted-foreground">{g.pct}%</span>
+              <span style={{ fontSize:14 }}>{name}</span>
             </div>
           ))}
         </div>
@@ -264,23 +275,23 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <Target className="w-6 h-6 text-primary" />,
       title: { fr: 'Alimenter un objectif', darija: 'زيد لهدف' },
       desc: {
-        fr: 'Sur chaque objectif, cliquez "+ Ajouter" et entrez le montant que vous épargnez.',
-        darija: 'فكل هدف، كليك "+ زيد" ودخل المبلغ لي وفرتيه.',
+        fr:     'Sur chaque objectif, cliquez "+ Ajouter" et saisissez le montant épargné.',
+        darija: 'فكل هدف، كليك على "+ زيد" ودخل المبلغ لي وفرتيه.',
       },
       animation: (
-        <div className="flex flex-col gap-2 items-center">
-          <div className="w-44 rounded-lg border border-border p-2">
-            <div className="flex items-center gap-1 mb-1.5">
-              <Target className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[10px] font-medium">طوموبيل</span>
+        <div style={{ display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
+          <div style={{ width:210, borderRadius:10, border:'1px solid hsl(var(--border))', padding:10, ...a('tut-fade','0.4s') }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+              <span>🎯</span>
+              <span style={{ fontSize:11, fontWeight:600 }}>طوموبيل</span>
             </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-1">
-              <div className="h-full bg-primary rounded-full animate-progress-fill" />
+            <div style={{ height:6, background:'hsl(var(--muted))', borderRadius:4, overflow:'hidden', marginBottom:4 }}>
+              <div style={{ height:'100%', background:'hsl(var(--primary))', borderRadius:4, ...a('tut-prog','1.4s','200ms','ease both') }} />
             </div>
-            <div className="text-[9px] text-muted-foreground">وفرت: 6,500 / 10,000 د.م</div>
+            <div style={{ fontSize:9, color:'hsl(var(--muted-foreground))' }}>وفرت: 6,500 / 10,000 د.م</div>
           </div>
-          <div className="w-28 h-7 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center animate-pulse-scale">
-            <span className="text-[10px] text-primary font-medium">+ زيد مبلغ</span>
+          <div style={{ padding:'5px 14px', borderRadius:8, background:'hsl(var(--primary)/.1)', border:'1px solid hsl(var(--primary)/.3)', fontSize:11, fontWeight:600, color:'hsl(var(--primary))', ...a('tut-pulse','1.6s','0s','ease-in-out infinite') }}>
+            + زيد مبلغ
           </div>
         </div>
       ),
@@ -289,47 +300,44 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <Target className="w-6 h-6 text-primary" />,
       title: { fr: 'La Dkhira (Tirelire)', darija: 'الذخيرة (الكوزينة)' },
       desc: {
-        fr: 'La Dkhira est votre tirelire cachée. Ajoutez de petits montants au fil du temps et regardez-les s\'accumuler.',
-        darija: 'الذخيرة هي كوزينتك الرقمية. زيد شوية مبالغ صغيرة مع الوقت وشوف كيفاش كتكبر.',
+        fr:     'La Dkhira est votre tirelire cachée. Ajoutez de petits montants et regardez-les s\'accumuler.',
+        darija: 'الذخيرة هي كوزينتك الرقمية. زيد شوية مبالغ صغيرة ومن بعد شوف كيفاش كتكبر.',
       },
       animation: (
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative w-16 h-16">
-            <div className="w-16 h-16 rounded-full bg-accent/20 border-2 border-accent/40 flex items-center justify-center animate-pulse-scale">
-              <span className="text-2xl">🐷</span>
-            </div>
-            {[0, 1, 2].map(i => (
-              <div
-                key={i}
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-yellow-400 rounded-full animate-coin-drop"
-                style={{ animationDelay: `${i * 500}ms`, animationFillMode: 'both' }}
-              />
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+          <div style={{ position:'relative', width:60, height:60 }}>
+            <div style={{ width:60, height:60, borderRadius:'50%', background:'hsl(var(--accent)/.2)', border:'2px solid hsl(var(--accent)/.4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, ...a('tut-pulse','2s','0s','ease-in-out infinite') }}>🐷</div>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                position:'absolute', top:0, left:'50%',
+                width:10, height:10, borderRadius:'50%', background:'#facc15',
+                ...a('tut-coin','1.2s',`${i*400}ms`,'ease-in-out infinite'),
+              }} />
             ))}
           </div>
-          <div className="text-sm font-bold text-accent animate-count-up">1,250 د.م</div>
+          <div style={{ fontSize:16, fontWeight:700, color:'hsl(var(--accent))', ...a('tut-fade','0.6s','600ms') }}>1,250 د.م 💰</div>
         </div>
       ),
     },
   ],
 
+  /* ── SETTINGS ── */
   settings: [
     {
       icon: <Settings className="w-6 h-6 text-primary" />,
       title: { fr: 'Langue', darija: 'اللغة' },
       desc: {
-        fr: 'Choisissez entre le Français et la Darija Marocaine. L\'application s\'adapte entièrement.',
-        darija: 'اختار بين الفرنساوية والدارجة المغربية. التطبيق كيتبدل كامل.',
+        fr:     'Choisissez entre le Français et la Darija. L\'application s\'adapte entièrement et mémorise votre choix.',
+        darija: 'اختار بين الفرنساوية والدارجة. التطبيق كيتبدل كامل وكيحفظ اختيارك.',
       },
       animation: (
-        <div className="flex gap-3 justify-center items-center">
-          <div className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium animate-pulse-scale">
-            الدارجة 🇲🇦
+        <div style={{ display:'flex', alignItems:'center', gap:12, justifyContent:'center' }}>
+          <div style={{ padding:'8px 14px', borderRadius:10, background:'hsl(var(--primary))', color:'hsl(var(--primary-foreground))', fontSize:12, fontWeight:700, ...a('tut-pulse','1.8s','0s','ease-in-out infinite') }}>
+            🇲🇦 الدارجة
           </div>
-          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center animate-spin-slow">
-            <span className="text-[10px]">↔</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium">
-            Français 🇫🇷
+          <div style={{ width:28, height:28, borderRadius:'50%', background:'hsl(var(--muted))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, ...a('tut-spin','3s','0s','linear infinite') }}>⇄</div>
+          <div style={{ padding:'8px 14px', borderRadius:10, background:'hsl(var(--muted))', color:'hsl(var(--muted-foreground))', fontSize:12, fontWeight:600 }}>
+            🇫🇷 Français
           </div>
         </div>
       ),
@@ -338,20 +346,20 @@ const tutorials: Record<TutorialKey, Step[]> = {
       icon: <Settings className="w-6 h-6 text-primary" />,
       title: { fr: 'Jour de Salaire', darija: 'نهار الصالير' },
       desc: {
-        fr: 'Indiquez le jour où vous recevez votre salaire. Cela permet au tableau de bord de calculer correctement vos périodes.',
-        darija: 'حدد النهار لي كتقبض فيه الصالير. هذا كيساعد لوحة التحكم تحسب الفترات مزيان.',
+        fr:     'Indiquez le jour où vous recevez votre salaire pour que le tableau de bord calcule correctement vos périodes.',
+        darija: 'حدد النهار لي كتقبض فيه الصالير باش لوحة التحكم تحسب الفترات مزيان.',
       },
       animation: (
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">1</span>
-            <div className="flex-1 w-32 h-2 bg-muted rounded-full relative">
-              <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full shadow animate-slide-thumb" style={{ left: '45%' }} />
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, width:200 }}>
+            <span style={{ fontSize:11, color:'hsl(var(--muted-foreground))' }}>1</span>
+            <div style={{ flex:1, height:6, background:'hsl(var(--muted))', borderRadius:6, position:'relative' }}>
+              <div style={{ position:'absolute', top:'50%', width:18, height:18, borderRadius:'50%', background:'hsl(var(--primary))', transform:'translateY(-50%)', boxShadow:'0 2px 6px hsl(var(--primary)/.4)', ...a('tut-thumb','2.4s','0s','ease-in-out infinite'), left:'45%' }} />
             </div>
-            <span className="text-xs text-muted-foreground">31</span>
+            <span style={{ fontSize:11, color:'hsl(var(--muted-foreground))' }}>31</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
-            <span className="text-lg font-bold text-primary animate-count-day">15</span>
+          <div style={{ width:44, height:44, borderRadius:12, background:'hsl(var(--primary)/.1)', border:'1px solid hsl(var(--primary)/.3)', display:'flex', alignItems:'center', justifyContent:'center', ...a('tut-pulse','2s','0s','ease-in-out infinite') }}>
+            <span style={{ fontSize:20, fontWeight:800, color:'hsl(var(--primary))' }}>15</span>
           </div>
         </div>
       ),
@@ -359,6 +367,7 @@ const tutorials: Record<TutorialKey, Step[]> = {
   ],
 };
 
+/* ─── Component ─── */
 interface TutorialPopupProps {
   tutorialKey: TutorialKey;
   onClose: () => void;
@@ -371,78 +380,75 @@ export const TutorialPopup: React.FC<TutorialPopupProps> = ({ tutorialKey, onClo
   const current = steps[step];
   const isLast = step === steps.length - 1;
 
-  // reset step when tab changes
   useEffect(() => { setStep(0); }, [tutorialKey]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <>
+      <style>{ANIM_STYLES}</style>
       <div
-        className="relative bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden"
-        onClick={e => e.stopPropagation()}
+        style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'flex-end', justifyContent:'center', padding:16 }}
+        onClick={onClose}
       >
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2">
-            {current.icon}
-            <span className="font-bold text-sm text-foreground">
-              {current.title[lang]}
-            </span>
+        {/* backdrop */}
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,.55)', backdropFilter:'blur(4px)' }} />
+
+        {/* card */}
+        <div
+          style={{ position:'relative', background:'hsl(var(--card))', border:'1px solid hsl(var(--border))', borderRadius:20, width:'100%', maxWidth:380, boxShadow:'0 24px 60px rgba(0,0,0,.35)', overflow:'hidden', ...a('tut-slide-up','0.35s','0s','cubic-bezier(.22,1,.36,1) both') }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* header */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 16px 8px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {current.icon}
+              <span style={{ fontWeight:700, fontSize:14, color:'hsl(var(--foreground))' }}>{current.title[lang]}</span>
+            </div>
+            <button onClick={onClose} style={{ padding:4, borderRadius:8, background:'transparent', border:'none', cursor:'pointer', color:'hsl(var(--muted-foreground))' }}>
+              <X style={{ width:16, height:16 }} />
+            </button>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
 
-        {/* Step dots */}
-        <div className="flex gap-1.5 justify-center mb-3">
-          {steps.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setStep(i)}
-              className={`transition-all rounded-full ${i === step ? 'w-5 h-1.5 bg-primary' : 'w-1.5 h-1.5 bg-muted-foreground/30'}`}
-            />
-          ))}
-        </div>
-
-        {/* Animation area */}
-        <div className="mx-4 mb-3 h-28 bg-muted/30 rounded-xl flex items-center justify-center border border-border/50 overflow-hidden">
-          <div key={step} className="animate-fade-in w-full flex items-center justify-center px-4">
-            {current.animation}
+          {/* step dots */}
+          <div style={{ display:'flex', gap:6, justifyContent:'center', marginBottom:12 }}>
+            {steps.map((_,i) => (
+              <button key={i} onClick={() => setStep(i)} style={{
+                border:'none', cursor:'pointer', borderRadius:10, transition:'all .2s',
+                width: i===step ? 20 : 6, height:6,
+                background: i===step ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground)/.3)',
+              }} />
+            ))}
           </div>
-        </div>
 
-        {/* Description */}
-        <p className="text-sm text-muted-foreground px-4 pb-4 text-center leading-relaxed">
-          {current.desc[lang]}
-        </p>
+          {/* animation area */}
+          <div style={{ margin:'0 16px 12px', height:112, background:'hsl(var(--muted)/.4)', borderRadius:14, border:'1px solid hsl(var(--border)/.6)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+            <div key={`${tutorialKey}-${step}`} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 16px', ...a('tut-fade','0.3s') }}>
+              {current.animation}
+            </div>
+          </div>
 
-        {/* Navigation */}
-        <div className="flex gap-2 px-4 pb-4">
-          {step > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => setStep(s => s - 1)}
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              {lang === 'darija' ? 'السابق' : 'Précédent'}
+          {/* description */}
+          <p style={{ fontSize:13, color:'hsl(var(--muted-foreground))', padding:'0 16px 16px', textAlign:'center', lineHeight:1.6, margin:0 }}>
+            {current.desc[lang]}
+          </p>
+
+          {/* navigation */}
+          <div style={{ display:'flex', gap:8, padding:'0 16px 16px' }}>
+            {step > 0 && (
+              <Button variant="outline" size="sm" style={{ flex:1 }} onClick={() => setStep(s => s - 1)}>
+                <ChevronLeft style={{ width:14, height:14, marginRight:4 }} />
+                {lang === 'darija' ? 'السابق' : 'Précédent'}
+              </Button>
+            )}
+            <Button size="sm" style={{ flex:1 }} onClick={() => isLast ? onClose() : setStep(s => s + 1)}>
+              {isLast
+                ? (lang === 'darija' ? '✅ فهمت!' : '✅ Compris !')
+                : (lang === 'darija' ? 'التالي' : 'Suivant')
+              }
+              {!isLast && <ChevronRight style={{ width:14, height:14, marginLeft:4 }} />}
             </Button>
-          )}
-          <Button
-            size="sm"
-            className="flex-1"
-            onClick={() => isLast ? onClose() : setStep(s => s + 1)}
-          >
-            {isLast
-              ? (lang === 'darija' ? 'فهمت!' : 'Compris !')
-              : (lang === 'darija' ? 'التالي' : 'Suivant')
-            }
-            {!isLast && <ChevronRight className="w-4 h-4 ml-1" />}
-          </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

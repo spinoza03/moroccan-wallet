@@ -206,7 +206,14 @@ const I18nContext = createContext<I18nContextType>({
 export const useI18n = () => useContext(I18nContext);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLang] = useState<Language>('fr');
+  const [lang, setLangState] = useState<Language>(() => {
+    return (localStorage.getItem('mz_lang') as Language) || 'fr';
+  });
+
+  const setLang = useCallback((l: Language) => {
+    localStorage.setItem('mz_lang', l);
+    setLangState(l);
+  }, []);
 
   const t = useCallback((key: string) => {
     return translations[key]?.[lang] || key;

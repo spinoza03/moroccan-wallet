@@ -67,7 +67,11 @@ export function useAppStore() {
       .select('data')
       .eq('user_id', user.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error && error.code !== 'PGRST116') {
+          // PGRST116 = no rows found (normal for new user)
+          console.error('load user_data error:', error);
+        }
         if (data?.data) {
           setState({ ...defaultState, ...(data.data as AppState) });
         }
@@ -79,12 +83,13 @@ export function useAppStore() {
   const persistState = useCallback((newState: AppState) => {
     if (!user) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      supabase.from('user_data').upsert({
+    saveTimeoutRef.current = setTimeout(async () => {
+      const { error } = await supabase.from('user_data').upsert({
         user_id: user.id,
         data: newState,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
+      if (error) console.error('save user_data error:', error);
     }, 800);
   }, [user]);
 

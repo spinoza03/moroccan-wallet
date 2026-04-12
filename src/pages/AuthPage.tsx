@@ -9,7 +9,7 @@ type Mode = 'login' | 'register';
 const AuthPage: React.FC = () => {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
-  const [form, setForm] = useState({ email: '', password: '', fullName: '', confirm: '' });
+  const [form, setForm] = useState({ email: '', password: '', fullName: '', phone: '', confirm: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -21,6 +21,7 @@ const AuthPage: React.FC = () => {
 
     if (mode === 'register') {
       if (!form.fullName.trim()) { setError('Veuillez entrer votre nom complet.'); return; }
+      if (!form.phone.trim()) { setError('Veuillez entrer votre numéro WhatsApp.'); return; }
       if (form.password !== form.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
       if (form.password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
     }
@@ -30,7 +31,7 @@ const AuthPage: React.FC = () => {
       const { error: err } = await signIn(form.email, form.password);
       if (err) setError(err);
     } else {
-      const { error: err } = await signUp(form.email, form.password, form.fullName);
+      const { error: err } = await signUp(form.email, form.password, form.fullName, form.phone);
       if (err) setError(err);
       else setSuccess('Compte créé ! Vérifiez votre email pour confirmer votre compte, puis connectez-vous.');
     }
@@ -66,12 +67,21 @@ const AuthPage: React.FC = () => {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-3">
                 {mode === 'register' && (
-                  <Input
-                    placeholder="Nom complet"
-                    value={form.fullName}
-                    onChange={e => setForm({ ...form, fullName: e.target.value })}
-                    required
-                  />
+                  <>
+                    <Input
+                      placeholder="Nom complet"
+                      value={form.fullName}
+                      onChange={e => setForm({ ...form, fullName: e.target.value })}
+                      required
+                    />
+                    <Input
+                      type="tel"
+                      placeholder="Numéro WhatsApp (ex: 0612345678)"
+                      value={form.phone}
+                      onChange={e => setForm({ ...form, phone: e.target.value })}
+                      required
+                    />
+                  </>
                 )}
                 <Input
                   type="email"

@@ -207,6 +207,16 @@ const UserCard: React.FC<{
           <div className="min-w-0">
             <p className="font-medium truncate">{user.full_name || 'Sans nom'}</p>
             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+            {user.phone_number && (
+              <a
+                href={`https://wa.me/${user.phone_number.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-600 hover:underline"
+              >
+                WhatsApp: {user.phone_number}
+              </a>
+            )}
             {user.subscription_end && (
               <p className="text-xs text-muted-foreground mt-0.5">
                 Expire : {new Date(user.subscription_end).toLocaleDateString('fr-MA')}

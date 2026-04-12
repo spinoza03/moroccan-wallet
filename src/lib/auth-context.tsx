@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName: string, phoneNumber: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, phoneNumber: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     if (data.user) {
@@ -64,9 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: data.user.id,
         email,
         full_name: fullName,
+        phone_number: phoneNumber,
         is_admin: false,
         subscription_status: 'none',
-      }, { onConflict: 'id', ignoreDuplicates: true });
+      }, { onConflict: 'id' });
     }
     return { error: null };
   };

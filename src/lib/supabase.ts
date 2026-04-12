@@ -11,6 +11,7 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string | null;
+  phone_number: string | null;
   is_admin: boolean;
   subscription_status: 'pending' | 'active' | 'expired' | 'none';
   subscription_plan: SubscriptionPlan | null;

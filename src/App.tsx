@@ -49,7 +49,7 @@ const AppRoutes = () => {
   }
 
   // No active subscription
-  if (!profile || profile.subscription_status !== 'active') {
+  if (profile.subscription_status !== 'active') {
     return (
       <Routes>
         <Route path="/subscribe" element={<SubscriptionPage />} />

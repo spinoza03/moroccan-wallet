@@ -22,16 +22,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (data) setProfile(data as UserProfile);
-    } catch {
-      // table may not exist yet — continue without profile
-    }
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (error) console.error('fetchProfile error:', error);
+    if (data) setProfile(data as UserProfile);
   };
 
   const refreshProfile = async () => {

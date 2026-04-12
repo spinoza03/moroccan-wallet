@@ -60,13 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     if (data.user) {
-      await supabase.from('user_profiles').insert({
+      await supabase.from('user_profiles').upsert({
         id: data.user.id,
         email,
         full_name: fullName,
         is_admin: false,
         subscription_status: 'none',
-      });
+      }, { onConflict: 'id', ignoreDuplicates: true });
     }
     return { error: null };
   };

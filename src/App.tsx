@@ -48,8 +48,8 @@ const AppRoutes = () => {
     );
   }
 
-  // No active subscription
-  if (profile.subscription_status !== 'active') {
+  // No active subscription (profile null = no row yet, treat as unsubscribed)
+  if (!profile || profile.subscription_status !== 'active') {
     return (
       <Routes>
         <Route path="/subscribe" element={<SubscriptionPage />} />

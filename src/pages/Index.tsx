@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { StoreProvider } from '@/lib/store-context';
-import { I18nProvider } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { DashboardPage } from '@/components/DashboardPage';
 import { TransactionsPage } from '@/components/TransactionsPage';
@@ -95,11 +94,9 @@ const AppContent: React.FC = () => {
 };
 
 const Index = () => (
-  <I18nProvider>
-    <StoreProvider>
-      <AppContent />
-    </StoreProvider>
-  </I18nProvider>
+  <StoreProvider>
+    <AppContent />
+  </StoreProvider>
 );
 
 export default Index;

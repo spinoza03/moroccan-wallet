@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Logo } from '@/components/Logo';
 import type { Language } from '@/lib/i18n';
 
 type Mode = 'login' | 'register';
@@ -47,10 +48,7 @@ const AuthPage: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-3">
-            <span className="text-primary-foreground font-bold text-3xl">م</span>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Mizaniyti</h1>
+          <Logo size="xl" className="mb-2" />
           <p className="text-sm text-muted-foreground mt-1">{t('auth.tagline')}</p>
         </div>
 

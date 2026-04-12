@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap } from 'lucide-react';
+import { Logo } from '@/components/Logo';
 import type { Language } from '@/lib/i18n';
 
 const BANK_INFO = {
@@ -89,10 +90,7 @@ const SubscriptionPage: React.FC = () => {
       <div className="max-w-lg mx-auto space-y-6">
         {/* Header */}
         <div className="text-center pt-8 pb-2">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
-            <span className="text-primary-foreground font-bold text-2xl">م</span>
-          </div>
-          <h1 className="text-2xl font-bold">Mizaniyti</h1>
+          <Logo size="lg" className="mx-auto mb-2" />
           <p className="text-muted-foreground text-sm mt-1">{t('sub.tagline')}</p>
         </div>
 

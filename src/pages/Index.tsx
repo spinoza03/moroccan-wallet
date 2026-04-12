@@ -8,41 +8,48 @@ import { TransactionsPage } from '@/components/TransactionsPage';
 import { DebtsPage } from '@/components/DebtsPage';
 import { SavingsPage } from '@/components/SavingsPage';
 import { SettingsPage } from '@/components/SettingsPage';
-import { LayoutDashboard, ArrowLeftRight, Users, Target, Settings, LogOut } from 'lucide-react';
+import { Logo } from '@/components/Logo';
+import { TutorialPopup, type TutorialKey } from '@/components/TutorialPopup';
+import { LayoutDashboard, ArrowLeftRight, Users, Target, Settings, LogOut, HelpCircle } from 'lucide-react';
 
 type Tab = 'dashboard' | 'transactions' | 'debts' | 'savings' | 'settings';
 
 const AppContent: React.FC = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
-  const { t } = useI18n();
+  const [showTutorial, setShowTutorial] = useState(false);
+  const { t, lang } = useI18n();
   const { signOut, profile } = useAuth();
 
   const tabs: { key: Tab; icon: React.ElementType; labelKey: string }[] = [
-    { key: 'dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-    { key: 'transactions', icon: ArrowLeftRight, labelKey: 'nav.transactions' },
-    { key: 'debts', icon: Users, labelKey: 'nav.debts' },
-    { key: 'savings', icon: Target, labelKey: 'nav.savings' },
-    { key: 'settings', icon: Settings, labelKey: 'nav.settings' },
+    { key: 'dashboard',    icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+    { key: 'transactions', icon: ArrowLeftRight,  labelKey: 'nav.transactions' },
+    { key: 'debts',        icon: Users,           labelKey: 'nav.debts' },
+    { key: 'savings',      icon: Target,          labelKey: 'nav.savings' },
+    { key: 'settings',     icon: Settings,        labelKey: 'nav.settings' },
   ];
+
+  const helpLabel = lang === 'darija' ? 'كيفاش كيخدم' : 'Comment utiliser';
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-card border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">م</span>
-          </div>
-          <h1 className="font-bold text-lg text-foreground">Mizaniyti</h1>
-        </div>
+      <header className="bg-card border-b px-4 py-2 flex items-center justify-between sticky top-0 z-10">
+        <Logo size="sm" className="h-9" />
         <div className="flex items-center gap-2">
           {profile?.full_name && (
             <span className="text-xs text-muted-foreground hidden sm:block">{profile.full_name}</span>
           )}
           <button
+            onClick={() => setShowTutorial(true)}
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors flex items-center gap-1"
+            title={helpLabel}
+          >
+            <HelpCircle className="w-4 h-4 text-primary" />
+          </button>
+          <button
             onClick={signOut}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            title="Se déconnecter"
+            title={lang === 'darija' ? 'خروج' : 'Se déconnecter'}
           >
             <LogOut className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -51,11 +58,11 @@ const AppContent: React.FC = () => {
 
       {/* Content */}
       <main className="flex-1 p-4 pb-24 max-w-2xl mx-auto w-full">
-        {tab === 'dashboard' && <DashboardPage />}
+        {tab === 'dashboard'    && <DashboardPage />}
         {tab === 'transactions' && <TransactionsPage />}
-        {tab === 'debts' && <DebtsPage />}
-        {tab === 'savings' && <SavingsPage />}
-        {tab === 'settings' && <SettingsPage />}
+        {tab === 'debts'        && <DebtsPage />}
+        {tab === 'savings'      && <SavingsPage />}
+        {tab === 'settings'     && <SettingsPage />}
       </main>
 
       {/* Bottom Nav */}
@@ -66,9 +73,7 @@ const AppContent: React.FC = () => {
               key={key}
               onClick={() => setTab(key)}
               className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
-                tab === key
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                tab === key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -77,6 +82,14 @@ const AppContent: React.FC = () => {
           ))}
         </div>
       </nav>
+
+      {/* Tutorial popup */}
+      {showTutorial && (
+        <TutorialPopup
+          tutorialKey={tab as TutorialKey}
+          onClose={() => setShowTutorial(false)}
+        />
+      )}
     </div>
   );
 };

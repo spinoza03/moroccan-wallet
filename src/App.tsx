@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { Logo } from "@/components/Logo";
 import Index from "./pages/Index.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import SubscriptionPage from "./pages/SubscriptionPage.tsx";
@@ -19,9 +20,7 @@ const AppRoutes = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto">
-            <span className="text-primary-foreground font-bold text-xl">م</span>
-          </div>
+          <Logo size="md" className="mx-auto animate-pulse-scale" />
           <p className="text-muted-foreground text-sm">Chargement...</p>
         </div>
       </div>

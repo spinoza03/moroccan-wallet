@@ -190,6 +190,7 @@
   .animate-progress-bar   { animation: progress-bar 1.2s ease both; }
   .animate-progress-fill  { animation: progress-fill 1.4s ease both; }
   .animate-shimmer        { background: linear-gradient(90deg, transparent 0%, hsl(var(--muted-foreground)/0.15) 50%, transparent 100%); background-size: 200% 100%; animation: shimmer 1.5s linear infinite; }
+  .animate-slide-in       { animation: slide-in-left  0.35s ease both; }
   .animate-slide-in-left  { animation: slide-in-left  0.4s ease both; }
   .animate-slide-in-right { animation: slide-in-right 0.4s ease both; }
   .animate-fade-in-left   { animation: fade-in-left  0.4s ease both; }

@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Plus, UserMinus, UserPlus, Trash2, CircleDollarSign } from 'lucide-react';
+import { Plus, UserMinus, UserPlus, Trash2, CircleDollarSign, Store, RotateCcw } from 'lucide-react';
 
-export const DebtsPage: React.FC = () => {
-  const { t } = useI18n();
+// ─── KRIDI TAB ──────────────────────────────────────────────────────────────
+
+const KridiTab: React.FC = () => {
+  const { t, lang } = useI18n();
   const { debtProfiles, addDebtProfile, addDebtPayment, deleteDebtProfile, getDebtRemaining } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [paymentFor, setPaymentFor] = useState<string | null>(null);
@@ -108,13 +110,22 @@ export const DebtsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('debt.title')}</h1>
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
-          <Plus className="w-4 h-4 mr-1" /> {t('debt.addProfile')}
-        </Button>
+    <div className="space-y-4">
+      {/* Description */}
+      <div className="flex items-center gap-2 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+        <Store className="w-5 h-5 text-orange-500 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          {lang === 'darija'
+            ? 'الكريدي: سجل ما خذيت بالكريدي من الحانوت أو ما دينك للناس'
+            : 'Kridi : enregistrez vos petites dettes chez le hanout ou auprès de proches'
+          }
+        </p>
       </div>
+
+      <Button onClick={() => setShowForm(!showForm)} size="sm" className="w-full">
+        <Plus className="w-4 h-4 mr-1" />
+        {lang === 'darija' ? 'زيد كريدي جديد' : 'Nouveau Kridi'}
+      </Button>
 
       {/* Totals */}
       <div className="grid grid-cols-2 gap-3">
@@ -124,7 +135,7 @@ export const DebtsPage: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
                 <UserMinus className="w-4 h-4 text-destructive" />
               </div>
-              <p className="font-bold text-destructive">{t('dash.debts')}</p>
+              <p className="font-bold text-destructive text-sm">{t('dash.debts')}</p>
             </div>
             {debts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('debt.noDebts')}</p>
@@ -151,7 +162,7 @@ export const DebtsPage: React.FC = () => {
               <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
                 <UserPlus className="w-4 h-4 text-green-600" />
               </div>
-              <p className="font-bold text-green-700">{t('dash.credits')}</p>
+              <p className="font-bold text-green-700 text-sm">{t('dash.credits')}</p>
             </div>
             {credits.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('debt.noCredits')}</p>
@@ -216,6 +227,296 @@ export const DebtsPage: React.FC = () => {
       {debtProfiles.length === 0 && (
         <p className="text-muted-foreground text-center py-8">{t('common.noData')}</p>
       )}
+    </div>
+  );
+};
+
+// ─── DARET TAB ──────────────────────────────────────────────────────────────
+
+interface DaretGroup {
+  id: string;
+  name: string;
+  members: string[];
+  monthlyAmount: number;
+  totalRounds: number;
+  currentRound: number;
+  myTurn: number; // which round is my payout
+  startDate: string;
+}
+
+const DARET_KEY = 'mz_daret_groups';
+
+function loadDaret(): DaretGroup[] {
+  try {
+    return JSON.parse(localStorage.getItem(DARET_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveDaret(groups: DaretGroup[]) {
+  localStorage.setItem(DARET_KEY, JSON.stringify(groups));
+}
+
+const DaretTab: React.FC = () => {
+  const { lang } = useI18n();
+  const [groups, setGroups] = useState<DaretGroup[]>(loadDaret);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    members: '',
+    monthlyAmount: '',
+    totalRounds: '',
+    myTurn: '',
+    startDate: new Date().toISOString().slice(0, 7),
+  });
+
+  const updateGroups = (next: DaretGroup[]) => {
+    setGroups(next);
+    saveDaret(next);
+  };
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const monthlyAmount = parseFloat(form.monthlyAmount);
+    const totalRounds = parseInt(form.totalRounds);
+    const myTurn = parseInt(form.myTurn);
+    if (!form.name.trim() || isNaN(monthlyAmount) || isNaN(totalRounds) || isNaN(myTurn)) return;
+    const members = form.members ? form.members.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const newGroup: DaretGroup = {
+      id: crypto.randomUUID(),
+      name: form.name.trim(),
+      members,
+      monthlyAmount,
+      totalRounds,
+      currentRound: 1,
+      myTurn,
+      startDate: form.startDate,
+    };
+    updateGroups([...groups, newGroup]);
+    setForm({ name: '', members: '', monthlyAmount: '', totalRounds: '', myTurn: '', startDate: new Date().toISOString().slice(0, 7) });
+    setShowForm(false);
+  };
+
+  const advanceRound = (id: string) => {
+    updateGroups(groups.map(g => g.id === id && g.currentRound < g.totalRounds
+      ? { ...g, currentRound: g.currentRound + 1 }
+      : g
+    ));
+  };
+
+  const deleteGroup = (id: string) => {
+    updateGroups(groups.filter(g => g.id !== id));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Description */}
+      <div className="flex items-center gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+        <RotateCcw className="w-5 h-5 text-blue-500 shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          {lang === 'darija'
+            ? 'الداريت: تتبع دور الداريت ديالك — شكون خد وامتى غادي تخد'
+            : 'Daret : suivez votre tontine — qui a reçu et quand c\'est votre tour'
+          }
+        </p>
+      </div>
+
+      <Button onClick={() => setShowForm(!showForm)} size="sm" className="w-full">
+        <Plus className="w-4 h-4 mr-1" />
+        {lang === 'darija' ? 'داريت جديدة' : 'Nouvelle Daret'}
+      </Button>
+
+      {showForm && (
+        <Card className="border-primary/20 shadow-lg animate-fade-in">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {lang === 'darija' ? 'إنشاء داريت' : 'Créer une Daret'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="space-y-3">
+              <Input
+                placeholder={lang === 'darija' ? 'إسم الداريت' : 'Nom de la Daret'}
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+              />
+              <Input
+                placeholder={lang === 'darija' ? 'أعضاء (مفصولين بفاصلة)' : 'Membres (séparés par virgule)'}
+                value={form.members}
+                onChange={e => setForm({ ...form, members: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number" min="0" step="0.01"
+                  placeholder={lang === 'darija' ? 'المبلغ/شهر (DH)' : 'Montant/mois (DH)'}
+                  value={form.monthlyAmount}
+                  onChange={e => setForm({ ...form, monthlyAmount: e.target.value })}
+                />
+                <Input
+                  type="number" min="1"
+                  placeholder={lang === 'darija' ? 'عدد الأدوار' : 'Nb. de tours'}
+                  value={form.totalRounds}
+                  onChange={e => setForm({ ...form, totalRounds: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number" min="1"
+                  placeholder={lang === 'darija' ? 'دوري رقم' : 'Mon tour (n°)'}
+                  value={form.myTurn}
+                  onChange={e => setForm({ ...form, myTurn: e.target.value })}
+                />
+                <Input
+                  type="month"
+                  value={form.startDate}
+                  onChange={e => setForm({ ...form, startDate: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1">
+                  {lang === 'darija' ? 'حفظ' : 'Enregistrer'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  {lang === 'darija' ? 'إلغاء' : 'Annuler'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {groups.length === 0 ? (
+        <p className="text-muted-foreground text-center py-8">
+          {lang === 'darija' ? 'ما كاين شي داريت' : 'Aucune Daret enregistrée'}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {groups.map(g => {
+            const pct = (g.currentRound / g.totalRounds) * 100;
+            const totalPot = g.monthlyAmount * g.totalRounds;
+            const isPaid = g.currentRound >= g.myTurn;
+            const roundsUntilMyTurn = Math.max(0, g.myTurn - g.currentRound);
+
+            return (
+              <Card key={g.id} className="border-l-4 border-l-blue-500 animate-slide-in">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <RotateCcw className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{g.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {g.monthlyAmount.toLocaleString()} DH × {g.totalRounds} {lang === 'darija' ? 'دور' : 'tours'} = {totalPot.toLocaleString()} DH
+                        </p>
+                        {g.members.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                            {g.members.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteGroup(g.id)}>
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </Button>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mb-2">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>{lang === 'darija' ? 'الدور' : 'Tour'} {g.currentRound}/{g.totalRounds}</span>
+                      <span>{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                      <div className="h-2 bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+
+                    {/* My turn marker */}
+                    <div className="relative mt-1 h-2">
+                      <div
+                        className="absolute top-0 w-0.5 h-3 bg-orange-500"
+                        style={{ left: `${((g.myTurn - 1) / g.totalRounds) * 100}%` }}
+                        title={lang === 'darija' ? 'دوري' : 'Mon tour'}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status badges */}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {isPaid ? (
+                      <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-medium">
+                        {lang === 'darija' ? '✓ خدت الداريت' : '✓ Reçu au tour ' + g.myTurn}
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+                        {lang === 'darija'
+                          ? `دوري رقم ${g.myTurn} — باقي ${roundsUntilMyTurn} دور`
+                          : `Mon tour n°${g.myTurn} — encore ${roundsUntilMyTurn} tour(s)`
+                        }
+                      </span>
+                    )}
+                    <span className="text-xs bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                      {lang === 'darija' ? 'الكاسة' : 'Pot'}: {formatMAD(totalPot)}
+                    </span>
+                  </div>
+
+                  {g.currentRound < g.totalRounds && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => advanceRound(g.id)}>
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      {lang === 'darija' ? 'الدور الجاي' : 'Tour suivant'}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── MAIN PAGE ───────────────────────────────────────────────────────────────
+
+export const DebtsPage: React.FC = () => {
+  const { t, lang } = useI18n();
+  const [activeTab, setActiveTab] = useState<'kridi' | 'daret'>('kridi');
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <h1 className="text-2xl font-bold text-foreground">
+        {lang === 'darija' ? 'الكريدي و الداريت' : 'Kridi & Daret'}
+      </h1>
+
+      {/* Tab switcher */}
+      <div className="flex rounded-lg border border-border overflow-hidden">
+        <button
+          onClick={() => setActiveTab('kridi')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+            activeTab === 'kridi'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <Store className="w-4 h-4" />
+          {lang === 'darija' ? 'الكريدي' : 'Kridi'}
+        </button>
+        <button
+          onClick={() => setActiveTab('daret')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+            activeTab === 'daret'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          <RotateCcw className="w-4 h-4" />
+          {lang === 'darija' ? 'الداريت' : 'Daret'}
+        </button>
+      </div>
+
+      {activeTab === 'kridi' ? <KridiTab /> : <DaretTab />}
     </div>
   );
 };

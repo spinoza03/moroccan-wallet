@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store-context';
+import { useMonth } from '@/lib/month-context';
 import { formatMAD } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,12 +85,65 @@ export const VARIABLE_EXPENSE_CATEGORIES = [
 const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
 const MONTHS_DA = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
+// Swipe-to-delete transaction row
+const SwipeableRow: React.FC<{
+  onDelete: () => void;
+  children: React.ReactNode;
+}> = ({ onDelete, children }) => {
+  const startX = useRef<number | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  const THRESHOLD = 80;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startX.current === null) return;
+    const dx = startX.current - e.touches[0].clientX;
+    if (dx > 0) setOffset(Math.min(dx, 120));
+  };
+
+  const handleTouchEnd = () => {
+    if (offset >= THRESHOLD) {
+      setDeleting(true);
+      setTimeout(onDelete, 250);
+    } else {
+      setOffset(0);
+    }
+    startX.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Red delete backdrop */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive transition-all"
+        style={{ width: offset > 0 ? offset : 0 }}
+      >
+        <Trash2 className="w-5 h-5 text-white" />
+      </div>
+      <div
+        className={`transition-transform ${deleting ? 'opacity-0 scale-95' : ''}`}
+        style={{ transform: `translateX(-${offset}px)`, transition: offset === 0 ? 'transform 0.2s ease' : 'none' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
 export const TransactionsPage: React.FC = () => {
   const { t, lang } = useI18n();
   const { transactions, addTransaction, deleteTransaction } = useStore();
+  const { selectedYear, selectedMonth } = useMonth();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
-  const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
 
   const MONTHS = lang === 'darija' ? MONTHS_DA : MONTHS_FR;
@@ -125,27 +179,15 @@ export const TransactionsPage: React.FC = () => {
     setShowForm(false);
   };
 
-  const availableMonths = useMemo(() => {
-    const months = new Set<string>();
-    transactions.forEach(tx => {
-      const d = new Date(tx.date);
-      months.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    });
-    return Array.from(months).sort().reverse();
-  }, [transactions]);
-
+  // Filter by global month + local search/type filters
   const filtered = useMemo(() => {
     return transactions.filter(tx => {
       if (search && !tx.label.toLowerCase().includes(search.toLowerCase()) && !tx.moroccanCategory.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterType !== 'all' && tx.type !== filterType) return false;
-      if (filterMonth !== 'all') {
-        const d = new Date(tx.date);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        if (key !== filterMonth) return false;
-      }
-      return true;
+      const d = new Date(tx.date);
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
     });
-  }, [transactions, search, filterType, filterMonth]);
+  }, [transactions, search, filterType, selectedYear, selectedMonth]);
 
   const categoryLabel = (tx: typeof transactions[0]) => {
     if (tx.type === 'income') return t('tx.incomeType');
@@ -153,10 +195,15 @@ export const TransactionsPage: React.FC = () => {
     return t('tx.expenseVariable');
   };
 
+  const monthLabel = `${MONTHS[selectedMonth]} ${selectedYear}`;
+
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('nav.transactions')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('nav.transactions')}</h1>
+          <p className="text-sm text-muted-foreground">{monthLabel}</p>
+        </div>
         <Button onClick={() => setShowForm(!showForm)} size="sm">
           <Plus className="w-4 h-4 mr-1" /> {t('tx.add')}
         </Button>
@@ -223,44 +270,33 @@ export const TransactionsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Filters */}
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('tx.search')}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('tx.all')}</SelectItem>
-              <SelectItem value="income">{t('tx.incomeType')}</SelectItem>
-              <SelectItem value="expense">{t('tx.expenses')}</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Search + type filter */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder={t('tx.search')}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-8"
+          />
         </div>
-        {availableMonths.length > 0 && (
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('tx.allMonths')}</SelectItem>
-              {availableMonths.map(m => {
-                const [y, mo] = m.split('-');
-                return (
-                  <SelectItem key={m} value={m}>
-                    {MONTHS[parseInt(mo) - 1]} {y}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('tx.all')}</SelectItem>
+            <SelectItem value="income">{t('tx.incomeType')}</SelectItem>
+            <SelectItem value="expense">{t('tx.expenses')}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Swipe hint */}
+      {filtered.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          {lang === 'darija' ? '← اسحب لليسار باش تمسح' : '← Glisser pour supprimer'}
+        </p>
+      )}
 
       {/* Transaction list */}
       <div className="space-y-2">
@@ -271,32 +307,34 @@ export const TransactionsPage: React.FC = () => {
           <p className="text-muted-foreground text-center py-8">{t('common.noData')}</p>
         ) : (
           filtered.map((tx, i) => (
-            <Card key={tx.id} className="animate-slide-in" style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}>
-              <CardContent className="flex items-center justify-between py-3 px-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'income' ? 'bg-green-500/10' : 'bg-destructive/10'}`}>
-                    {tx.type === 'income'
-                      ? <TrendingUp className="w-4 h-4 text-green-600" />
-                      : <TrendingDown className="w-4 h-4 text-destructive" />
-                    }
+            <SwipeableRow key={tx.id} onDelete={() => deleteTransaction(tx.id)}>
+              <Card className="animate-slide-in" style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}>
+                <CardContent className="flex items-center justify-between py-3 px-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'income' ? 'bg-green-500/10' : 'bg-destructive/10'}`}>
+                      {tx.type === 'income'
+                        ? <TrendingUp className="w-4 h-4 text-green-600" />
+                        : <TrendingDown className="w-4 h-4 text-destructive" />
+                      }
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm text-foreground truncate">{tx.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {categoryLabel(tx)} · {tx.moroccanCategory} · {tx.date}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm text-foreground truncate">{tx.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {categoryLabel(tx)} · {tx.moroccanCategory} · {tx.date}
-                    </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`font-semibold text-sm ${tx.type === 'income' ? 'text-green-600' : 'text-destructive'}`}>
+                      {tx.type === 'income' ? '+' : '-'}{formatMAD(tx.amount)}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTransaction(tx.id)}>
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </Button>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`font-semibold text-sm ${tx.type === 'income' ? 'text-green-600' : 'text-destructive'}`}>
-                    {tx.type === 'income' ? '+' : '-'}{formatMAD(tx.amount)}
-                  </span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTransaction(tx.id)}>
-                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </SwipeableRow>
           ))
         )}
       </div>

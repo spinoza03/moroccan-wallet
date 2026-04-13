@@ -9,7 +9,6 @@ import Index from "./pages/Index.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import SubscriptionPage from "./pages/SubscriptionPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
-import LandingPage from "./pages/LandingPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,9 +31,8 @@ const AppRoutes = () => {
   if (!user) {
     return (
       <Routes>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     );
   }

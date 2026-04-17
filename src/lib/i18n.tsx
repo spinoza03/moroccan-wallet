@@ -177,6 +177,10 @@ const translations: Record<string, Record<Language, string>> = {
   'sub.thankYouDesc': { fr: 'Votre reçu de paiement a été reçu. Votre abonnement sera activé dans les 24h après vérification du paiement.', darija: 'وصلنا إيصال الدفع ديالك. غادي يتفعل اشتراكك خلال 24 ساعة من بعد ما نتحققو من الدفع.' },
   'sub.signOut': { fr: 'Se déconnecter', darija: 'خروج' },
   'sub.bankHolder': { fr: 'Titulaire', darija: 'صاحب الحساب' },
+  'sub.guarantee': { fr: 'Satisfait ou remboursé', darija: 'ضمان: يرجع المال لا ما عجبكش' },
+  'sub.guaranteeDesc': { fr: 'Si vous n\'êtes pas satisfait, nous vous remboursons intégralement. Aucun risque.', darija: 'إلا ما رضيتيش، كنردو ليك فلوسك كاملة. بلا ريسك.' },
+  'sub.support': { fr: 'Besoin d\'aide ?', darija: 'محتاج مساعدة؟' },
+  'sub.supportDesc': { fr: 'Contactez-nous sur WhatsApp', darija: 'تواصل معنا على واتساب' },
 
   // Common
   'common.dh': { fr: 'DH', darija: 'د.م' },

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap } from 'lucide-react';
+import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap, ShieldCheck, MessageCircle } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import type { Language } from '@/lib/i18n';
 
@@ -149,6 +149,29 @@ const SubscriptionPage: React.FC = () => {
             </ul>
           </CardContent>
         </Card>
+
+        {/* Guarantee trust banner */}
+        <div className="flex items-start gap-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3">
+          <ShieldCheck className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-green-800 dark:text-green-400 text-sm">{t('sub.guarantee')}</p>
+            <p className="text-green-700 dark:text-green-500 text-xs mt-0.5">{t('sub.guaranteeDesc')}</p>
+          </div>
+        </div>
+
+        {/* WhatsApp support */}
+        <a
+          href="https://wa.me/212608301414"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 bg-[#25D366]/10 border border-[#25D366]/30 rounded-xl px-4 py-3 hover:bg-[#25D366]/20 transition-colors"
+        >
+          <MessageCircle className="w-6 h-6 text-[#25D366] shrink-0" />
+          <div>
+            <p className="font-semibold text-sm">{t('sub.support')}</p>
+            <p className="text-muted-foreground text-xs">{t('sub.supportDesc')} · +212 608-301414</p>
+          </div>
+        </a>
 
         {/* Bank info */}
         {selectedPlan && (

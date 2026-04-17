@@ -1,10 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { I18nProvider } from "./lib/i18n.tsx";
-import { initPixel } from "./lib/pixel";
 import "./index.css";
-
-initPixel('1335892905133004');
 
 createRoot(document.getElementById("root")!).render(
   <I18nProvider>

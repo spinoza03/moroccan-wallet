@@ -1,6 +1,4 @@
-const PIXEL_ID = '1335892905133004';
-
-export const initPixel = () => {
+export const initPixel = (pixelId: string) => {
   if (typeof window === 'undefined' || (window as any).fbq) return;
   const w = window as any;
   const n = (w.fbq = function (...a: unknown[]) {
@@ -15,12 +13,12 @@ export const initPixel = () => {
   t.async = true;
   t.src = 'https://connect.facebook.net/en_US/fbevents.js';
   document.head.appendChild(t);
-  w.fbq('init', PIXEL_ID);
+  w.fbq('init', pixelId);
   w.fbq('track', 'PageView');
 };
 
-export const fbq = (...args: unknown[]) => {
-  if (typeof window !== 'undefined' && (window as any).fbq) {
-    (window as any).fbq(...args);
-  }
+export const trackEvent = (eventName: string, params?: object) => {
+  if (typeof window === 'undefined' || !(window as any).fbq) return;
+  if (params) (window as any).fbq('track', eventName, params);
+  else (window as any).fbq('track', eventName);
 };

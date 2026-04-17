@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { initPixel } from '@/lib/pixel';
+import { trackEvent } from '@/lib/pixel';
 import { useI18n } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import type { Language } from '@/lib/i18n';
 type Mode = 'login' | 'register';
 
 const AuthPage: React.FC = () => {
-  useEffect(() => { initPixel(); }, []);
   const { signIn, signUp } = useAuth();
   const { t, lang, setLang } = useI18n();
   const [mode, setMode] = useState<Mode>('login');
@@ -39,8 +38,12 @@ const AuthPage: React.FC = () => {
       if (err) setError(err);
     } else {
       const { error: err } = await signUp(form.email, form.password, form.fullName, form.phone);
-      if (err) setError(err);
-      else setSuccess(t('auth.successMsg'));
+      if (err) {
+        setError(err);
+      } else {
+        trackEvent('CompleteRegistration');
+        setSuccess(t('auth.successMsg'));
+      }
     }
     setLoading(false);
   };

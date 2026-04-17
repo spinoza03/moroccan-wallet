@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { fbq } from '@/lib/pixel';
 import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,6 +62,7 @@ const SubscriptionPage: React.FC = () => {
     }).eq('id', user.id);
 
     await refreshProfile();
+    fbq('track', 'Subscribe');
     setSubmitted(true);
     setUploading(false);
   };

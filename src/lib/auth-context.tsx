@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, UserProfile } from './supabase';
+import { fbq } from './pixel';
 
 interface AuthContextType {
   session: Session | null;
@@ -68,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         is_admin: false,
         subscription_status: 'none',
       }, { onConflict: 'id' });
+      fbq('track', 'StartTrial');
     }
     return { error: null };
   };

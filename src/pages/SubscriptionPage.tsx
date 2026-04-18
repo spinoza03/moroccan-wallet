@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap, ShieldCheck, Flame, Users } from 'lucide-react';
+import { CheckCircle2, Copy, Upload, Crown, Calendar, Zap, ShieldCheck, Flame, Users, Clock } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import type { Language } from '@/lib/i18n';
 
@@ -34,6 +34,28 @@ const SubscriptionPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [yearlyTaken, setYearlyTaken] = useState<number>(7);
+  const [startingTrial, setStartingTrial] = useState(false);
+
+  const handleStartTrial = async () => {
+    if (!user) return;
+    setStartingTrial(true);
+    try {
+      const now = new Date();
+      const end = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+      await supabase.from('user_profiles').update({
+        subscription_status: 'trial',
+        subscription_plan: 'trial',
+        subscription_start: now.toISOString(),
+        subscription_end: end.toISOString(),
+      }).eq('id', user.id);
+      await refreshProfile();
+      trackEvent('Lead', { value: 0, currency: 'MAD' });
+    } catch (err) {
+      console.error('Failed to start trial', err);
+    } finally {
+      setStartingTrial(false);
+    }
+  };
 
   useEffect(() => {
     supabase
@@ -48,6 +70,8 @@ const SubscriptionPage: React.FC = () => {
 
   const spotsLeft = Math.max(YEARLY_SLOTS - yearlyTaken, 0);
   const fillPct = Math.round((yearlyTaken / YEARLY_SLOTS) * 100);
+
+  const hasUsedTrial = profile?.subscription_status === 'trial' || profile?.subscription_plan === 'trial';
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -147,6 +171,17 @@ const SubscriptionPage: React.FC = () => {
           </div>
         )}
 
+        {/* Trial ended banner */}
+        {hasUsedTrial && (
+          <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-2">
+            <Clock className="w-6 h-6 text-blue-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-blue-800 dark:text-blue-400 text-sm">{t('sub.trialEndedTitle')}</p>
+              <p className="text-blue-700 dark:text-blue-500 text-xs mt-0.5">{t('sub.trialEndedDesc')}</p>
+            </div>
+          </div>
+        )}
+
         {/* Plans */}
         <div className="grid grid-cols-2 gap-3">
           {/* Monthly */}
@@ -208,6 +243,20 @@ const SubscriptionPage: React.FC = () => {
         <p className="text-center text-xs text-muted-foreground -mt-3">
           🔥 Prix spécial lancement — après les {YEARLY_SLOTS} premiers clients, le tarif annuel reviendra à <strong>199 DH</strong>
         </p>
+
+        {/* Trial option */}
+        {!hasUsedTrial && (
+          <button
+            onClick={handleStartTrial}
+            disabled={startingTrial}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 p-4 transition-all"
+          >
+            <Clock className="w-5 h-5 text-slate-500 shrink-0" />
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {startingTrial ? '...' : t('sub.trial')}
+            </span>
+          </button>
+        )}
 
         {/* Features */}
         <Card>

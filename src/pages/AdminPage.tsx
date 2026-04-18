@@ -10,6 +10,7 @@ const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   expired: 'bg-red-100 text-red-800',
   none: 'bg-gray-100 text-gray-600',
+  trial: 'bg-blue-100 text-blue-800',
 };
 
 const statusLabel: Record<string, string> = {
@@ -17,10 +18,11 @@ const statusLabel: Record<string, string> = {
   pending: 'En attente',
   expired: 'Expiré',
   none: 'Aucun',
+  trial: 'Essai',
 };
 
-type FilterStatus = 'all' | 'active' | 'pending' | 'expired' | 'none';
-type FilterPlan = 'all' | 'monthly' | 'yearly';
+type FilterStatus = 'all' | 'active' | 'pending' | 'expired' | 'none' | 'trial';
+type FilterPlan = 'all' | 'monthly' | 'yearly' | 'trial';
 type FilterDays = 0 | 1 | 7 | 30 | 90;
 
 const AdminPage: React.FC = () => {
@@ -78,6 +80,19 @@ const AdminPage: React.FC = () => {
     await supabase.from('user_profiles').update({
       subscription_status: 'expired',
       subscription_end: new Date().toISOString(),
+    }).eq('id', userId);
+    await fetchUsers();
+    setActionLoading(null);
+  };
+
+  const extendTrial = async (userId: string, currentEnd: string | null) => {
+    setActionLoading(userId + '_extend');
+    const base = currentEnd ? new Date(currentEnd) : new Date();
+    const end = new Date(base.getTime() + 24 * 60 * 60 * 1000);
+    await supabase.from('user_profiles').update({
+      subscription_status: 'trial',
+      subscription_plan: 'trial',
+      subscription_end: end.toISOString(),
     }).eq('id', userId);
     await fetchUsers();
     setActionLoading(null);
@@ -210,7 +225,7 @@ const AdminPage: React.FC = () => {
             {/* Status chips */}
             <div className="flex flex-wrap gap-1.5">
               <span className="text-xs text-muted-foreground self-center mr-1">Statut :</span>
-              {(['all', 'active', 'pending', 'expired', 'none'] as FilterStatus[]).map(s => (
+              {(['all', 'active', 'pending', 'expired', 'none', 'trial'] as FilterStatus[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
@@ -228,7 +243,7 @@ const AdminPage: React.FC = () => {
             {/* Plan chips */}
             <div className="flex flex-wrap gap-1.5">
               <span className="text-xs text-muted-foreground self-center mr-1">Plan :</span>
-              {(['all', 'monthly', 'yearly'] as FilterPlan[]).map(p => (
+              {(['all', 'monthly', 'yearly', 'trial'] as FilterPlan[]).map(p => (
                 <button
                   key={p}
                   onClick={() => setFilterPlan(p)}
@@ -238,7 +253,7 @@ const AdminPage: React.FC = () => {
                       : 'bg-background border-border hover:bg-muted'
                   }`}
                 >
-                  {p === 'all' ? 'Tous' : p === 'monthly' ? 'Mensuel' : 'Annuel'}
+                  {p === 'all' ? 'Tous' : p === 'monthly' ? 'Mensuel' : p === 'yearly' ? 'Annuel' : 'Essai'}
                 </button>
               ))}
             </div>
@@ -282,6 +297,7 @@ const AdminPage: React.FC = () => {
                 onActivate={activate}
                 onReject={reject}
                 onDeactivate={deactivate}
+                onExtendTrial={extendTrial}
                 onPreview={setPreviewUrl}
                 actionLoading={actionLoading}
               />
@@ -302,6 +318,7 @@ const AdminPage: React.FC = () => {
                   onActivate={activate}
                   onReject={reject}
                   onDeactivate={deactivate}
+                  onExtendTrial={extendTrial}
                   onPreview={setPreviewUrl}
                   actionLoading={actionLoading}
                 />
@@ -321,6 +338,7 @@ const AdminPage: React.FC = () => {
                       onActivate={activate}
                       onReject={reject}
                       onDeactivate={deactivate}
+                      onExtendTrial={extendTrial}
                       onPreview={setPreviewUrl}
                       actionLoading={actionLoading}
                     />
@@ -359,9 +377,10 @@ const UserCard: React.FC<{
   onActivate: (id: string, plan: 'monthly' | 'yearly') => void;
   onReject: (id: string) => void;
   onDeactivate: (id: string) => void;
+  onExtendTrial: (id: string, currentEnd: string | null) => void;
   onPreview: (url: string) => void;
   actionLoading: string | null;
-}> = ({ user, onActivate, onReject, onDeactivate, onPreview, actionLoading }) => {
+}> = ({ user, onActivate, onReject, onDeactivate, onExtendTrial, onPreview, actionLoading }) => {
   const waNumber = user.phone_number
     ? (() => { const d = user.phone_number!.replace(/\D/g, ''); return d.startsWith('0') ? '212' + d.slice(1) : d; })()
     : null;
@@ -451,6 +470,19 @@ const UserCard: React.FC<{
                 </Button>
               )}
             </>
+          )}
+
+          {user.subscription_status === 'trial' && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+              disabled={actionLoading === user.id + '_extend'}
+              onClick={() => onExtendTrial(user.id, user.subscription_end)}
+            >
+              <Clock className="w-3 h-3 mr-1" />
+              {actionLoading === user.id + '_extend' ? '...' : '+24h Essai'}
+            </Button>
           )}
 
           {user.subscription_status === 'active' && (

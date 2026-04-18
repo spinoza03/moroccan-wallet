@@ -5,7 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type SubscriptionPlan = 'monthly' | 'yearly';
+export type SubscriptionPlan = 'monthly' | 'yearly' | 'trial';
 
 export interface UserProfile {
   id: string;
@@ -13,7 +13,7 @@ export interface UserProfile {
   full_name: string | null;
   phone_number: string | null;
   is_admin: boolean;
-  subscription_status: 'pending' | 'active' | 'expired' | 'none';
+  subscription_status: 'pending' | 'active' | 'expired' | 'none' | 'trial';
   subscription_plan: SubscriptionPlan | null;
   subscription_start: string | null;
   subscription_end: string | null;

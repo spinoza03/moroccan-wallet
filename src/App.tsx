@@ -56,8 +56,11 @@ const AppRoutes = () => {
     );
   }
 
+  // Check if trial is expired
+  const isTrialExpired = profile?.subscription_status === 'trial' && profile.subscription_end && new Date(profile.subscription_end) < new Date();
+
   // No active subscription (profile null = no row yet, treat as unsubscribed)
-  if (!profile || profile.subscription_status !== 'active') {
+  if (!profile || (profile.subscription_status !== 'active' && profile.subscription_status !== 'trial') || isTrialExpired) {
     return (
       <Routes>
         <Route path="/subscribe" element={<SubscriptionPage />} />

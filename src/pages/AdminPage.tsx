@@ -209,7 +209,7 @@ const UserCard: React.FC<{
             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
             {user.phone_number && (
               <a
-                href={`https://wa.me/${user.phone_number.replace(/\D/g, '')}`}
+                href={`https://wa.me/${(() => { const d = user.phone_number!.replace(/\D/g, ''); return d.startsWith('0') ? '212' + d.slice(1) : d; })()}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-green-600 hover:underline"
@@ -249,27 +249,38 @@ const UserCard: React.FC<{
             </Button>
           )}
 
-          {user.subscription_status === 'pending' && (
+          {user.subscription_status !== 'active' && (
             <>
               <Button
                 size="sm"
                 className="h-8 text-xs bg-green-600 hover:bg-green-700"
                 disabled={actionLoading === user.id + '_activate'}
-                onClick={() => onActivate(user.id, user.subscription_plan || 'monthly')}
+                onClick={() => onActivate(user.id, 'monthly')}
               >
                 <CheckCircle2 className="w-3 h-3 mr-1" />
-                {actionLoading === user.id + '_activate' ? '...' : 'Activer'}
+                {actionLoading === user.id + '_activate' ? '...' : 'Activer Mensuel'}
               </Button>
               <Button
                 size="sm"
-                variant="destructive"
-                className="h-8 text-xs"
-                disabled={actionLoading === user.id + '_reject'}
-                onClick={() => onReject(user.id)}
+                className="h-8 text-xs bg-blue-600 hover:bg-blue-700"
+                disabled={actionLoading === user.id + '_activate'}
+                onClick={() => onActivate(user.id, 'yearly')}
               >
-                <XCircle className="w-3 h-3 mr-1" />
-                {actionLoading === user.id + '_reject' ? '...' : 'Rejeter'}
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                {actionLoading === user.id + '_activate' ? '...' : 'Activer Annuel'}
               </Button>
+              {user.subscription_status === 'pending' && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 text-xs"
+                  disabled={actionLoading === user.id + '_reject'}
+                  onClick={() => onReject(user.id)}
+                >
+                  <XCircle className="w-3 h-3 mr-1" />
+                  {actionLoading === user.id + '_reject' ? '...' : 'Rejeter'}
+                </Button>
+              )}
             </>
           )}
 

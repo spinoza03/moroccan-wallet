@@ -49,7 +49,7 @@ const SubscriptionPage: React.FC = () => {
         subscription_end: end.toISOString(),
       }).eq('id', user.id);
       await refreshProfile();
-      trackEvent('Lead', { value: 0, currency: 'MAD' });
+      trackEvent('StartTrial', { value: 0, currency: 'MAD' });
     } catch (err) {
       console.error('Failed to start trial', err);
     } finally {

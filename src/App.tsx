@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/Logo";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import Index from "./pages/Index.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import SubscriptionPage from "./pages/SubscriptionPage.tsx";
@@ -83,6 +84,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <FloatingWhatsApp />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
